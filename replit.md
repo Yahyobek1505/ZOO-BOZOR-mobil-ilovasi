@@ -28,6 +28,11 @@ _Populate as you build — short repo map plus pointers to the source-of-truth f
 
 _Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
 
+- Authentication is Firebase, as explicitly approved by the user. Preserve native mobile and web support. Clerk remains a read-only legacy user directory during migration, not an active login provider; do not restore Clerk middleware or frontend providers when merging older work.
+- Marketplace ownership uses stable application account IDs, not raw Firebase UIDs. A verified Firebase email can link to a verified legacy account; persist that mapping and preserve existing local storage namespaces and listing ownership. Never link accounts from an unverified email or client-supplied profile fields.
+- Protected API routes must verify Firebase bearer tokens and obtain the canonical account ID through the shared Firebase authentication middleware. Reconcile older task branches that still call Clerk `getAuth()` before enabling their routes.
+- Do not delete legacy accounts or the server-side directory credentials during migration. Old passwords cannot be copied; existing users register once with the same email in Firebase and verify it, or use Google with that verified email.
+
 ## Product
 
 - The user chose a native mobile app, not a browser-only web app.

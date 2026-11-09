@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useClerk } from '@clerk/expo';
+import { useSession } from '@/context/AuthContext';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { C, F } from '@/constants/colors';
 import { PillButton } from './FormKit';
 
 export function SignOutButton() {
-  const { signOut } = useClerk();
+  const { signOut } = useSession();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');

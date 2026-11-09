@@ -11,6 +11,64 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /auth/session:
+    get:
+      operationId: getFirebaseSession
+      tags: [auth]
+      security: [{ firebaseBearer: [] }]
+      responses:
+        "200":
+          description: Verified Firebase account and stable marketplace identity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FirebaseSession"
+        "401":
+          description: Missing or invalid Firebase token
+        "403":
+          description: Email verification required
+        "503":
+          description: Account migration unavailable, retry without losing data
+  /auth/google/handoff:
+    post:
+      operationId: createGoogleHandoff
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoogleHandoffInput"
+      responses:
+        "200":
+          description: Encrypted proof-bound return URI for the native browser session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleHandoff"
+        "400":
+          description: Invalid parameters
+        "401":
+          description: Invalid Firebase Google identity
+  /auth/google/redeem:
+    post:
+      operationId: redeemGoogleHandoff
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoogleRedemptionInput"
+      responses:
+        "200":
+          description: Google credential recovered with the initiating device's proof
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleCredential"
+        "400":
+          description: Invalid, expired or incorrectly bound handoff
   /healthz:
     get:
       operationId: healthCheck
@@ -25,7 +83,45 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 components:
+  securitySchemes:
+    firebaseBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
+    FirebaseSession:
+      type: object
+      required: [accountId, firebaseUid, email]
+      properties:
+        accountId: { type: string }
+        firebaseUid: { type: string }
+        email: { type: string }
+    GoogleHandoffInput:
+      type: object
+      required: [firebaseIdToken, googleIdToken, codeChallenge, returnUrl, state]
+      properties:
+        firebaseIdToken: { type: string, maxLength: 16000 }
+        googleIdToken: { type: string, maxLength: 16000 }
+        codeChallenge: { type: string, pattern: "^[a-f0-9]{64}$" }
+        state: { type: string, pattern: "^[a-f0-9]{64}$" }
+        returnUrl: { type: string, maxLength: 2048 }
+    GoogleHandoff:
+      type: object
+      required: [returnUrl]
+      properties:
+        returnUrl: { type: string }
+    GoogleRedemptionInput:
+      type: object
+      required: [handoff, verifier, state]
+      properties:
+        handoff: { type: string, maxLength: 24000 }
+        verifier: { type: string, pattern: "^[a-f0-9]{64}$" }
+        state: { type: string, pattern: "^[a-f0-9]{64}$" }
+    GoogleCredential:
+      type: object
+      required: [idToken]
+      properties:
+        idToken: { type: string }
     HealthStatus:
       type: object
       properties:

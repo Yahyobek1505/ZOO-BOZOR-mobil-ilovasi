@@ -6,7 +6,7 @@ import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from '@clerk/expo';
+import { useSession } from '@/context/AuthContext';
 import { C, F } from '@/constants/colors';
 import { CATEGORIES, CITIES, GeoPoint, Listing } from '@/constants/data';
 import { decimalOnly, digitsOnly, displayPhone, normalizePhone } from '@/constants/input';
@@ -49,7 +49,7 @@ const fmtPrice = (v: string) => v.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 export default function EditListing() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { getListing, saveListing, profile } = useApp();
-  const { userId } = useAuth();
+  const { accountId: userId } = useSession();
   const bottom = useBottomInset();
   const existing = id ? (getListing(String(id)) as (Listing & Extra) | undefined) : undefined;
   const editing = !!existing?.own;

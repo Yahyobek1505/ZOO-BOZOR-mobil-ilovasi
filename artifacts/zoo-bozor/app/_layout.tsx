@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ClerkLoaded, ClerkProvider, useAuth, useUser } from '@clerk/expo';
-import { tokenCache } from '@clerk/expo/token-cache';
+import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { AuthProvider, useSession } from '@/context/AuthContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -13,7 +13,7 @@ import {
   PlusJakartaSans_700Bold,
   PlusJakartaSans_800ExtraBold,
 } from '@expo-google-fonts/plus-jakarta-sans';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { AppProvider } from '@/context/AppContext';
 import { C } from '@/constants/colors';
@@ -21,23 +21,30 @@ import { C } from '@/constants/colors';
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
-const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
-const proxyUrl = process.env.EXPO_PUBLIC_CLERK_PROXY_URL || undefined;
 
 function AccountScopedApp({ children }: { children: React.ReactNode }) {
-  const { userId } = useAuth();
-  const { user } = useUser();
+  const { accountId, user, loading, error, retry, signOut, isSignedIn } = useSession();
+  const bridge = usePathname() === '/google-auth';
   useEffect(() => {
     queryClient.clear();
-  }, [userId]);
+  }, [accountId]);
+  if (!bridge && (loading || error)) return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 20, backgroundColor: C.white }}>
+      {loading ? <ActivityIndicator color={C.navy} /> : <>
+        <Text style={{ textAlign: 'center', color: C.navy }}>{error}</Text>
+        <Pressable onPress={retry} accessibilityRole="button"><Text>Qayta urinish</Text></Pressable>
+        <Pressable onPress={() => { void signOut().catch(() => Alert.alert('Hisobdan chiqib boʻlmadi', 'Qayta urinib koʻring.')); }} accessibilityRole="button"><Text>Hisobdan chiqish</Text></Pressable>
+      </>}
+    </View>
+  );
   return (
     <AppProvider
-      key={userId ?? 'guest'}
-      storageKey={userId ? `zoo-bozor/account/${userId}/v1` : undefined}
-      initialProfile={user ? {
-        name: user.fullName || user.firstName || '',
-        email: user.primaryEmailAddress?.emailAddress || '',
-        avatar: user.hasImage ? user.imageUrl : '',
+      key={bridge ? 'google-bridge' : accountId ?? 'guest'}
+      storageKey={!bridge && accountId ? `zoo-bozor/account/${accountId}/v1` : undefined}
+      initialProfile={!bridge && isSignedIn && user ? {
+        name: user.displayName || '',
+        email: user.email || '',
+        avatar: user.photoURL || '',
       } : undefined}
     >
       {children}
@@ -56,6 +63,7 @@ function RootLayoutNav() {
       <Stack.Screen name="welcome" options={{ presentation: 'fullScreenModal' }} />
       <Stack.Screen name="login" options={{ presentation: 'modal' }} />
       <Stack.Screen name="sso-callback" />
+      <Stack.Screen name="google-auth" />
     </Stack>
   );
 }
@@ -80,11 +88,10 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontError) return null;
 
   return (
-    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache} proxyUrl={proxyUrl}>
-    <ClerkLoaded>
     <SafeAreaProvider>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
+          <AuthProvider>
           <AccountScopedApp>
             <GestureHandlerRootView style={{ flex: 1 }}>
               <KeyboardProvider>
@@ -93,10 +100,9 @@ export default function RootLayout() {
               </KeyboardProvider>
             </GestureHandlerRootView>
           </AccountScopedApp>
+          </AuthProvider>
         </QueryClientProvider>
       </ErrorBoundary>
     </SafeAreaProvider>
-    </ClerkLoaded>
-    </ClerkProvider>
   );
 }

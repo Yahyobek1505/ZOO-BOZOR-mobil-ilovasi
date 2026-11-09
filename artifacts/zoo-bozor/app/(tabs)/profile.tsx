@@ -5,7 +5,7 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import { C, F } from '@/constants/colors';
 import { useApp } from '@/context/AppContext';
 import { Button, EmptyState, ListingCard, go, useTopInset } from '@/components/ui';
-import { useAuth, useUser } from '@clerk/expo';
+import { useSession } from '@/context/AuthContext';
 import { SignOutButton } from '@/components/SignOutButton';
 import { displayPhone } from '@/constants/input';
 
@@ -13,8 +13,7 @@ type Tab = 'info' | 'ads' | 'menu';
 
 export default function ProfileScreen() {
   const top = useTopInset();
-  const { isSignedIn } = useAuth();
-  const { user } = useUser();
+  const { isSignedIn, user } = useSession();
   const { profile, myListings, favorites, favoriteProducts, cart, conversations } = useApp();
   const [tab, setTab] = useState<Tab>('info');
   const initials = profile.name
@@ -73,8 +72,8 @@ export default function ProfileScreen() {
             </View>
           </Pressable>
           <View style={{ flex: 1, marginLeft: 14 }}>
-            <Text style={st.name} numberOfLines={1} testID="user-name-display">{profile.name || user?.fullName || (isSignedIn ? 'Foydalanuvchi' : 'Mehmon')}</Text>
-            {isSignedIn ? <Text style={[st.region, { marginTop: 4 }]} numberOfLines={1} testID="user-email-display">{user?.primaryEmailAddress?.emailAddress}</Text> : null}
+            <Text style={st.name} numberOfLines={1} testID="user-name-display">{profile.name || (isSignedIn ? user?.displayName || 'Foydalanuvchi' : 'Mehmon')}</Text>
+            {isSignedIn ? <Text style={[st.region, { marginTop: 4 }]} numberOfLines={1} testID="user-email-display">{user?.email}</Text> : null}
             <View style={[st.row, { marginTop: 4, gap: 4 }]}>
               <Feather name="map-pin" size={12} color={C.mutedForeground} />
               <Text style={st.region}>{profile.region || 'Hudud koʻrsatilmagan'}</Text>
