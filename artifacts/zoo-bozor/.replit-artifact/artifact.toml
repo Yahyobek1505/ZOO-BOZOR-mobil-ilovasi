@@ -1,0 +1,24 @@
+kind = "mobile"
+previewPath = "/"
+title = "ZOO-BOZOR"
+description = "Figma dizayni asosidagi o‘zbekcha mobil hayvonlar va uy hayvonlari mahsulotlari bozori. E’lonlar, qidirish, saqlanganlar va shaxsiy profil."
+version = "1.0.0"
+id = "artifacts/zoo-bozor"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/" ]
+localPort = 21947
+
+[services.development]
+run = "pnpm --filter @workspace/zoo-bozor run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/zoo-bozor", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/zoo-bozor", "run", "serve" ]
+
+[services.env]
+PORT = "21947"
+BASE_PATH = "/"

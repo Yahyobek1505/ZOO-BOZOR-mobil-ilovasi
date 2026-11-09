@@ -1,0 +1,1 @@
+- [Figma asset downloads](figma-assets.md) — validate downloaded file bytes; successful HTTP status alone does not prove a usable image.

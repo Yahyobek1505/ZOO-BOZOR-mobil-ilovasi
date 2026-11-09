@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "ZOO-BOZOR",
+    "slug": "zoo-bozor",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "zoo-bozor",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#c8ff00"
+      }
+    },
+    "web": {
+      "favicon": "./assets/images/icon.png",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "ZOO-BOZOR eʼlon va profil uchun rasm tanlashga ruxsat soʻraydi."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "ZOO-BOZOR yaqin atrofdagi eʼlonlarni koʻrsatish uchun joylashuvdan foydalanadi."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "splash": {
+      "image": "./assets/images/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#c8ff00"
+    }
+  }
+}

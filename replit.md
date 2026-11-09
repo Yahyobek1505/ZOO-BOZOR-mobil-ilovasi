@@ -1,6 +1,6 @@
-# [Project name]
+# ZOO-BOZOR
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+O‘zbek tilidagi, hayvonlar e’lonlari va uy hayvonlari mahsulotlari uchun mobil ilova.
 
 ## Run & Operate
 
@@ -30,11 +30,14 @@ _Populate as you build — non-obvious choices a reader couldn't infer from the 
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- The user chose a native mobile app, not a browser-only web app.
+- Source of visual truth: the user's ZOO-BOZOR Figma design, file key `8CDKhxn3Jozy83aPQ6m8kV`. Reproduce its screens and original imagery faithfully rather than inventing a new visual direction.
+- External services (real authentication, SMS, message delivery, payments) must never be represented as connected or successful until actually integrated.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Communicate in Uzbek with correct spelling.
+- Preserve the supplied Figma design as closely as possible.
 
 ## Gotchas
 
