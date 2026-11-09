@@ -17,6 +17,7 @@ import { Stack, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { AppProvider } from '@/context/AppContext';
 import { C } from '@/constants/colors';
+import { AppAlertHost } from '@/components/AppAlert';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -100,6 +101,7 @@ export default function RootLayout() {
               </KeyboardProvider>
             </GestureHandlerRootView>
           </AccountScopedApp>
+          <AppAlertHost />
           </AuthProvider>
         </QueryClientProvider>
       </ErrorBoundary>

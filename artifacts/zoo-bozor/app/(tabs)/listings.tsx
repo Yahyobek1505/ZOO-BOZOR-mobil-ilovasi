@@ -11,7 +11,7 @@ type Sort = 'new' | 'asc' | 'desc';
 
 export default function ListingsScreen() {
   const params = useLocalSearchParams<{ q?: string; category?: string; sort?: string }>();
-  const { allListings, myListings } = useApp();
+  const { allListings, myListings, listingsLoading, refreshListings } = useApp();
   const { width } = useWindowDimensions();
   const [q, setQ] = useState('');
   const [cat, setCat] = useState('all');
@@ -40,6 +40,8 @@ export default function ListingsScreen() {
     <FlatList
       style={{ flex: 1, backgroundColor: C.surface }}
       data={data}
+      refreshing={listingsLoading}
+      onRefresh={refreshListings}
       keyExtractor={(l) => l.id}
       numColumns={2}
       columnWrapperStyle={{ gap: 12, paddingHorizontal: 16 }}
@@ -53,7 +55,7 @@ export default function ListingsScreen() {
           <View style={st.mine}>
             <View style={{ flex: 1 }}>
               <Text style={st.mineTitle}>Mening eʼlonlarim</Text>
-              <Text style={st.mineSub}>{myListings.length ? `${myListings.length} ta eʼlon shu qurilmada` : 'Hali eʼlon joylamadingiz'}</Text>
+              <Text style={st.mineSub}>{myListings.length ? `${myListings.length} ta eʼlon` : 'Hali eʼlon joylamadingiz'}</Text>
             </View>
             <Button label={myListings.length ? 'Ochish' : 'Qoʻshish'} icon={myListings.length ? 'list' : 'plus'} style={{ height: 40 }} onPress={() => go(myListings.length ? '/my-listings' : '/listing/edit')} />
           </View>

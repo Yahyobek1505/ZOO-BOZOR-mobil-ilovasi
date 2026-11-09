@@ -55,6 +55,494 @@ export const RedeemGoogleHandoffResponse = zod.object({
 })
 
 
+export const listListingsResponseOneIdMin = 6;
+export const listListingsResponseOneIdMax = 100;
+
+
+export const listListingsResponseOneIdRegExp = new RegExp('^[a-zA-Z0-9_-]+$');
+export const listListingsResponseOneTitleMin = 3;
+export const listListingsResponseOneTitleMax = 160;
+
+export const listListingsResponseOnePriceMin = 1000;
+export const listListingsResponseOnePriceMax = 999999999999;
+
+export const listListingsResponseOneImagesItemRegExp = new RegExp('^/api/storage/images/[a-f0-9-]{36}$');
+export const listListingsResponseOneImagesMax = 8;
+
+export const listListingsResponseOneBreedMax = 160;
+
+export const listListingsResponseOneAgeMax = 40;
+
+export const listListingsResponseOneCountMax = 999;
+
+export const listListingsResponseOneDocumentsMax = 160;
+
+export const listListingsResponseOneWeightMax = 40;
+
+export const listListingsResponseOneColorMax = 100;
+
+export const listListingsResponseOneCityMax = 100;
+
+export const listListingsResponseOneDistrictMax = 160;
+
+export const listListingsResponseOneGeoLatMin = -90;
+export const listListingsResponseOneGeoLatMax = 90;
+
+export const listListingsResponseOneGeoLngMin = -180;
+export const listListingsResponseOneGeoLngMax = 180;
+
+export const listListingsResponseOneDescriptionMin = 10;
+export const listListingsResponseOneDescriptionMax = 10000;
+
+export const listListingsResponseOnePhoneRegExp = new RegExp('^998[0-9]{9}$');
+export const listListingsResponseOneSellerNameMax = 160;
+
+
+
+export const ListListingsResponseItem = zod.object({
+  "id": zod.string().min(listListingsResponseOneIdMin).max(listListingsResponseOneIdMax).regex(listListingsResponseOneIdRegExp),
+  "title": zod.string().min(listListingsResponseOneTitleMin).max(listListingsResponseOneTitleMax),
+  "category": zod.enum(['mushuk', 'kuchuk', 'qush', 'qoramol', 'ot', 'ekzotik']),
+  "price": zod.number().min(listListingsResponseOnePriceMin).max(listListingsResponseOnePriceMax),
+  "negotiable": zod.boolean(),
+  "images": zod.array(zod.string().regex(listListingsResponseOneImagesItemRegExp)).min(1).max(listListingsResponseOneImagesMax),
+  "breed": zod.string().min(1).max(listListingsResponseOneBreedMax),
+  "age": zod.string().min(1).max(listListingsResponseOneAgeMax),
+  "gender": zod.enum(['erkak', 'urgochi', 'aralash', '']),
+  "count": zod.number().int().min(1).max(listListingsResponseOneCountMax).optional(),
+  "documents": zod.string().max(listListingsResponseOneDocumentsMax).optional(),
+  "weight": zod.string().min(1).max(listListingsResponseOneWeightMax),
+  "color": zod.string().min(1).max(listListingsResponseOneColorMax),
+  "city": zod.string().min(1).max(listListingsResponseOneCityMax),
+  "district": zod.string().min(1).max(listListingsResponseOneDistrictMax),
+  "geo": zod.object({
+  "lat": zod.number().min(listListingsResponseOneGeoLatMin).max(listListingsResponseOneGeoLatMax),
+  "lng": zod.number().min(listListingsResponseOneGeoLngMin).max(listListingsResponseOneGeoLngMax)
+}),
+  "description": zod.string().min(listListingsResponseOneDescriptionMin).max(listListingsResponseOneDescriptionMax),
+  "phone": zod.string().regex(listListingsResponseOnePhoneRegExp),
+  "sellerName": zod.string().min(1).max(listListingsResponseOneSellerNameMax),
+  "delivery": zod.boolean(),
+  "vaccinated": zod.boolean()
+}).and(zod.object({
+  "ownerId": zod.string(),
+  "createdAt": zod.number(),
+  "rating": zod.number(),
+  "views": zod.number()
+}))
+export const ListListingsResponse = zod.array(ListListingsResponseItem)
+
+
+export const createListingBodyIdMin = 6;
+export const createListingBodyIdMax = 100;
+
+
+export const createListingBodyIdRegExp = new RegExp('^[a-zA-Z0-9_-]+$');
+export const createListingBodyTitleMin = 3;
+export const createListingBodyTitleMax = 160;
+
+export const createListingBodyPriceMin = 1000;
+export const createListingBodyPriceMax = 999999999999;
+
+export const createListingBodyImagesItemRegExp = new RegExp('^/api/storage/images/[a-f0-9-]{36}$');
+export const createListingBodyImagesMax = 8;
+
+export const createListingBodyBreedMax = 160;
+
+export const createListingBodyAgeMax = 40;
+
+export const createListingBodyCountMax = 999;
+
+export const createListingBodyDocumentsMax = 160;
+
+export const createListingBodyWeightMax = 40;
+
+export const createListingBodyColorMax = 100;
+
+export const createListingBodyCityMax = 100;
+
+export const createListingBodyDistrictMax = 160;
+
+export const createListingBodyGeoLatMin = -90;
+export const createListingBodyGeoLatMax = 90;
+
+export const createListingBodyGeoLngMin = -180;
+export const createListingBodyGeoLngMax = 180;
+
+export const createListingBodyDescriptionMin = 10;
+export const createListingBodyDescriptionMax = 10000;
+
+export const createListingBodyPhoneRegExp = new RegExp('^998[0-9]{9}$');
+export const createListingBodySellerNameMax = 160;
+
+
+
+export const CreateListingBody = zod.object({
+  "id": zod.string().min(createListingBodyIdMin).max(createListingBodyIdMax).regex(createListingBodyIdRegExp),
+  "title": zod.string().min(createListingBodyTitleMin).max(createListingBodyTitleMax),
+  "category": zod.enum(['mushuk', 'kuchuk', 'qush', 'qoramol', 'ot', 'ekzotik']),
+  "price": zod.number().min(createListingBodyPriceMin).max(createListingBodyPriceMax),
+  "negotiable": zod.boolean(),
+  "images": zod.array(zod.string().regex(createListingBodyImagesItemRegExp)).min(1).max(createListingBodyImagesMax),
+  "breed": zod.string().min(1).max(createListingBodyBreedMax),
+  "age": zod.string().min(1).max(createListingBodyAgeMax),
+  "gender": zod.enum(['erkak', 'urgochi', 'aralash', '']),
+  "count": zod.number().int().min(1).max(createListingBodyCountMax).optional(),
+  "documents": zod.string().max(createListingBodyDocumentsMax).optional(),
+  "weight": zod.string().min(1).max(createListingBodyWeightMax),
+  "color": zod.string().min(1).max(createListingBodyColorMax),
+  "city": zod.string().min(1).max(createListingBodyCityMax),
+  "district": zod.string().min(1).max(createListingBodyDistrictMax),
+  "geo": zod.object({
+  "lat": zod.number().min(createListingBodyGeoLatMin).max(createListingBodyGeoLatMax),
+  "lng": zod.number().min(createListingBodyGeoLngMin).max(createListingBodyGeoLngMax)
+}),
+  "description": zod.string().min(createListingBodyDescriptionMin).max(createListingBodyDescriptionMax),
+  "phone": zod.string().regex(createListingBodyPhoneRegExp),
+  "sellerName": zod.string().min(1).max(createListingBodySellerNameMax),
+  "delivery": zod.boolean(),
+  "vaccinated": zod.boolean()
+})
+
+export const createListingResponseOneIdMin = 6;
+export const createListingResponseOneIdMax = 100;
+
+
+export const createListingResponseOneIdRegExp = new RegExp('^[a-zA-Z0-9_-]+$');
+export const createListingResponseOneTitleMin = 3;
+export const createListingResponseOneTitleMax = 160;
+
+export const createListingResponseOnePriceMin = 1000;
+export const createListingResponseOnePriceMax = 999999999999;
+
+export const createListingResponseOneImagesItemRegExp = new RegExp('^/api/storage/images/[a-f0-9-]{36}$');
+export const createListingResponseOneImagesMax = 8;
+
+export const createListingResponseOneBreedMax = 160;
+
+export const createListingResponseOneAgeMax = 40;
+
+export const createListingResponseOneCountMax = 999;
+
+export const createListingResponseOneDocumentsMax = 160;
+
+export const createListingResponseOneWeightMax = 40;
+
+export const createListingResponseOneColorMax = 100;
+
+export const createListingResponseOneCityMax = 100;
+
+export const createListingResponseOneDistrictMax = 160;
+
+export const createListingResponseOneGeoLatMin = -90;
+export const createListingResponseOneGeoLatMax = 90;
+
+export const createListingResponseOneGeoLngMin = -180;
+export const createListingResponseOneGeoLngMax = 180;
+
+export const createListingResponseOneDescriptionMin = 10;
+export const createListingResponseOneDescriptionMax = 10000;
+
+export const createListingResponseOnePhoneRegExp = new RegExp('^998[0-9]{9}$');
+export const createListingResponseOneSellerNameMax = 160;
+
+
+
+export const CreateListingResponse = zod.object({
+  "id": zod.string().min(createListingResponseOneIdMin).max(createListingResponseOneIdMax).regex(createListingResponseOneIdRegExp),
+  "title": zod.string().min(createListingResponseOneTitleMin).max(createListingResponseOneTitleMax),
+  "category": zod.enum(['mushuk', 'kuchuk', 'qush', 'qoramol', 'ot', 'ekzotik']),
+  "price": zod.number().min(createListingResponseOnePriceMin).max(createListingResponseOnePriceMax),
+  "negotiable": zod.boolean(),
+  "images": zod.array(zod.string().regex(createListingResponseOneImagesItemRegExp)).min(1).max(createListingResponseOneImagesMax),
+  "breed": zod.string().min(1).max(createListingResponseOneBreedMax),
+  "age": zod.string().min(1).max(createListingResponseOneAgeMax),
+  "gender": zod.enum(['erkak', 'urgochi', 'aralash', '']),
+  "count": zod.number().int().min(1).max(createListingResponseOneCountMax).optional(),
+  "documents": zod.string().max(createListingResponseOneDocumentsMax).optional(),
+  "weight": zod.string().min(1).max(createListingResponseOneWeightMax),
+  "color": zod.string().min(1).max(createListingResponseOneColorMax),
+  "city": zod.string().min(1).max(createListingResponseOneCityMax),
+  "district": zod.string().min(1).max(createListingResponseOneDistrictMax),
+  "geo": zod.object({
+  "lat": zod.number().min(createListingResponseOneGeoLatMin).max(createListingResponseOneGeoLatMax),
+  "lng": zod.number().min(createListingResponseOneGeoLngMin).max(createListingResponseOneGeoLngMax)
+}),
+  "description": zod.string().min(createListingResponseOneDescriptionMin).max(createListingResponseOneDescriptionMax),
+  "phone": zod.string().regex(createListingResponseOnePhoneRegExp),
+  "sellerName": zod.string().min(1).max(createListingResponseOneSellerNameMax),
+  "delivery": zod.boolean(),
+  "vaccinated": zod.boolean()
+}).and(zod.object({
+  "ownerId": zod.string(),
+  "createdAt": zod.number(),
+  "rating": zod.number(),
+  "views": zod.number()
+}))
+
+
+export const GetListingParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const getListingResponseOneIdMin = 6;
+export const getListingResponseOneIdMax = 100;
+
+
+export const getListingResponseOneIdRegExp = new RegExp('^[a-zA-Z0-9_-]+$');
+export const getListingResponseOneTitleMin = 3;
+export const getListingResponseOneTitleMax = 160;
+
+export const getListingResponseOnePriceMin = 1000;
+export const getListingResponseOnePriceMax = 999999999999;
+
+export const getListingResponseOneImagesItemRegExp = new RegExp('^/api/storage/images/[a-f0-9-]{36}$');
+export const getListingResponseOneImagesMax = 8;
+
+export const getListingResponseOneBreedMax = 160;
+
+export const getListingResponseOneAgeMax = 40;
+
+export const getListingResponseOneCountMax = 999;
+
+export const getListingResponseOneDocumentsMax = 160;
+
+export const getListingResponseOneWeightMax = 40;
+
+export const getListingResponseOneColorMax = 100;
+
+export const getListingResponseOneCityMax = 100;
+
+export const getListingResponseOneDistrictMax = 160;
+
+export const getListingResponseOneGeoLatMin = -90;
+export const getListingResponseOneGeoLatMax = 90;
+
+export const getListingResponseOneGeoLngMin = -180;
+export const getListingResponseOneGeoLngMax = 180;
+
+export const getListingResponseOneDescriptionMin = 10;
+export const getListingResponseOneDescriptionMax = 10000;
+
+export const getListingResponseOnePhoneRegExp = new RegExp('^998[0-9]{9}$');
+export const getListingResponseOneSellerNameMax = 160;
+
+
+
+export const GetListingResponse = zod.object({
+  "id": zod.string().min(getListingResponseOneIdMin).max(getListingResponseOneIdMax).regex(getListingResponseOneIdRegExp),
+  "title": zod.string().min(getListingResponseOneTitleMin).max(getListingResponseOneTitleMax),
+  "category": zod.enum(['mushuk', 'kuchuk', 'qush', 'qoramol', 'ot', 'ekzotik']),
+  "price": zod.number().min(getListingResponseOnePriceMin).max(getListingResponseOnePriceMax),
+  "negotiable": zod.boolean(),
+  "images": zod.array(zod.string().regex(getListingResponseOneImagesItemRegExp)).min(1).max(getListingResponseOneImagesMax),
+  "breed": zod.string().min(1).max(getListingResponseOneBreedMax),
+  "age": zod.string().min(1).max(getListingResponseOneAgeMax),
+  "gender": zod.enum(['erkak', 'urgochi', 'aralash', '']),
+  "count": zod.number().int().min(1).max(getListingResponseOneCountMax).optional(),
+  "documents": zod.string().max(getListingResponseOneDocumentsMax).optional(),
+  "weight": zod.string().min(1).max(getListingResponseOneWeightMax),
+  "color": zod.string().min(1).max(getListingResponseOneColorMax),
+  "city": zod.string().min(1).max(getListingResponseOneCityMax),
+  "district": zod.string().min(1).max(getListingResponseOneDistrictMax),
+  "geo": zod.object({
+  "lat": zod.number().min(getListingResponseOneGeoLatMin).max(getListingResponseOneGeoLatMax),
+  "lng": zod.number().min(getListingResponseOneGeoLngMin).max(getListingResponseOneGeoLngMax)
+}),
+  "description": zod.string().min(getListingResponseOneDescriptionMin).max(getListingResponseOneDescriptionMax),
+  "phone": zod.string().regex(getListingResponseOnePhoneRegExp),
+  "sellerName": zod.string().min(1).max(getListingResponseOneSellerNameMax),
+  "delivery": zod.boolean(),
+  "vaccinated": zod.boolean()
+}).and(zod.object({
+  "ownerId": zod.string(),
+  "createdAt": zod.number(),
+  "rating": zod.number(),
+  "views": zod.number()
+}))
+
+
+export const UpdateListingParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const updateListingBodyIdMin = 6;
+export const updateListingBodyIdMax = 100;
+
+
+export const updateListingBodyIdRegExp = new RegExp('^[a-zA-Z0-9_-]+$');
+export const updateListingBodyTitleMin = 3;
+export const updateListingBodyTitleMax = 160;
+
+export const updateListingBodyPriceMin = 1000;
+export const updateListingBodyPriceMax = 999999999999;
+
+export const updateListingBodyImagesItemRegExp = new RegExp('^/api/storage/images/[a-f0-9-]{36}$');
+export const updateListingBodyImagesMax = 8;
+
+export const updateListingBodyBreedMax = 160;
+
+export const updateListingBodyAgeMax = 40;
+
+export const updateListingBodyCountMax = 999;
+
+export const updateListingBodyDocumentsMax = 160;
+
+export const updateListingBodyWeightMax = 40;
+
+export const updateListingBodyColorMax = 100;
+
+export const updateListingBodyCityMax = 100;
+
+export const updateListingBodyDistrictMax = 160;
+
+export const updateListingBodyGeoLatMin = -90;
+export const updateListingBodyGeoLatMax = 90;
+
+export const updateListingBodyGeoLngMin = -180;
+export const updateListingBodyGeoLngMax = 180;
+
+export const updateListingBodyDescriptionMin = 10;
+export const updateListingBodyDescriptionMax = 10000;
+
+export const updateListingBodyPhoneRegExp = new RegExp('^998[0-9]{9}$');
+export const updateListingBodySellerNameMax = 160;
+
+
+
+export const UpdateListingBody = zod.object({
+  "id": zod.string().min(updateListingBodyIdMin).max(updateListingBodyIdMax).regex(updateListingBodyIdRegExp),
+  "title": zod.string().min(updateListingBodyTitleMin).max(updateListingBodyTitleMax),
+  "category": zod.enum(['mushuk', 'kuchuk', 'qush', 'qoramol', 'ot', 'ekzotik']),
+  "price": zod.number().min(updateListingBodyPriceMin).max(updateListingBodyPriceMax),
+  "negotiable": zod.boolean(),
+  "images": zod.array(zod.string().regex(updateListingBodyImagesItemRegExp)).min(1).max(updateListingBodyImagesMax),
+  "breed": zod.string().min(1).max(updateListingBodyBreedMax),
+  "age": zod.string().min(1).max(updateListingBodyAgeMax),
+  "gender": zod.enum(['erkak', 'urgochi', 'aralash', '']),
+  "count": zod.number().int().min(1).max(updateListingBodyCountMax).optional(),
+  "documents": zod.string().max(updateListingBodyDocumentsMax).optional(),
+  "weight": zod.string().min(1).max(updateListingBodyWeightMax),
+  "color": zod.string().min(1).max(updateListingBodyColorMax),
+  "city": zod.string().min(1).max(updateListingBodyCityMax),
+  "district": zod.string().min(1).max(updateListingBodyDistrictMax),
+  "geo": zod.object({
+  "lat": zod.number().min(updateListingBodyGeoLatMin).max(updateListingBodyGeoLatMax),
+  "lng": zod.number().min(updateListingBodyGeoLngMin).max(updateListingBodyGeoLngMax)
+}),
+  "description": zod.string().min(updateListingBodyDescriptionMin).max(updateListingBodyDescriptionMax),
+  "phone": zod.string().regex(updateListingBodyPhoneRegExp),
+  "sellerName": zod.string().min(1).max(updateListingBodySellerNameMax),
+  "delivery": zod.boolean(),
+  "vaccinated": zod.boolean()
+})
+
+export const updateListingResponseOneIdMin = 6;
+export const updateListingResponseOneIdMax = 100;
+
+
+export const updateListingResponseOneIdRegExp = new RegExp('^[a-zA-Z0-9_-]+$');
+export const updateListingResponseOneTitleMin = 3;
+export const updateListingResponseOneTitleMax = 160;
+
+export const updateListingResponseOnePriceMin = 1000;
+export const updateListingResponseOnePriceMax = 999999999999;
+
+export const updateListingResponseOneImagesItemRegExp = new RegExp('^/api/storage/images/[a-f0-9-]{36}$');
+export const updateListingResponseOneImagesMax = 8;
+
+export const updateListingResponseOneBreedMax = 160;
+
+export const updateListingResponseOneAgeMax = 40;
+
+export const updateListingResponseOneCountMax = 999;
+
+export const updateListingResponseOneDocumentsMax = 160;
+
+export const updateListingResponseOneWeightMax = 40;
+
+export const updateListingResponseOneColorMax = 100;
+
+export const updateListingResponseOneCityMax = 100;
+
+export const updateListingResponseOneDistrictMax = 160;
+
+export const updateListingResponseOneGeoLatMin = -90;
+export const updateListingResponseOneGeoLatMax = 90;
+
+export const updateListingResponseOneGeoLngMin = -180;
+export const updateListingResponseOneGeoLngMax = 180;
+
+export const updateListingResponseOneDescriptionMin = 10;
+export const updateListingResponseOneDescriptionMax = 10000;
+
+export const updateListingResponseOnePhoneRegExp = new RegExp('^998[0-9]{9}$');
+export const updateListingResponseOneSellerNameMax = 160;
+
+
+
+export const UpdateListingResponse = zod.object({
+  "id": zod.string().min(updateListingResponseOneIdMin).max(updateListingResponseOneIdMax).regex(updateListingResponseOneIdRegExp),
+  "title": zod.string().min(updateListingResponseOneTitleMin).max(updateListingResponseOneTitleMax),
+  "category": zod.enum(['mushuk', 'kuchuk', 'qush', 'qoramol', 'ot', 'ekzotik']),
+  "price": zod.number().min(updateListingResponseOnePriceMin).max(updateListingResponseOnePriceMax),
+  "negotiable": zod.boolean(),
+  "images": zod.array(zod.string().regex(updateListingResponseOneImagesItemRegExp)).min(1).max(updateListingResponseOneImagesMax),
+  "breed": zod.string().min(1).max(updateListingResponseOneBreedMax),
+  "age": zod.string().min(1).max(updateListingResponseOneAgeMax),
+  "gender": zod.enum(['erkak', 'urgochi', 'aralash', '']),
+  "count": zod.number().int().min(1).max(updateListingResponseOneCountMax).optional(),
+  "documents": zod.string().max(updateListingResponseOneDocumentsMax).optional(),
+  "weight": zod.string().min(1).max(updateListingResponseOneWeightMax),
+  "color": zod.string().min(1).max(updateListingResponseOneColorMax),
+  "city": zod.string().min(1).max(updateListingResponseOneCityMax),
+  "district": zod.string().min(1).max(updateListingResponseOneDistrictMax),
+  "geo": zod.object({
+  "lat": zod.number().min(updateListingResponseOneGeoLatMin).max(updateListingResponseOneGeoLatMax),
+  "lng": zod.number().min(updateListingResponseOneGeoLngMin).max(updateListingResponseOneGeoLngMax)
+}),
+  "description": zod.string().min(updateListingResponseOneDescriptionMin).max(updateListingResponseOneDescriptionMax),
+  "phone": zod.string().regex(updateListingResponseOnePhoneRegExp),
+  "sellerName": zod.string().min(1).max(updateListingResponseOneSellerNameMax),
+  "delivery": zod.boolean(),
+  "vaccinated": zod.boolean()
+}).and(zod.object({
+  "ownerId": zod.string(),
+  "createdAt": zod.number(),
+  "rating": zod.number(),
+  "views": zod.number()
+}))
+
+
+export const RemoveListingParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const RemoveListingResponse = zod.void()
+
+
+export const requestListingUploadBodySizeMax = 10485760;
+
+
+
+export const RequestListingUploadBody = zod.object({
+  "contentType": zod.enum(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']),
+  "size": zod.number().int().min(1).max(requestListingUploadBodySizeMax)
+})
+
+export const RequestListingUploadResponse = zod.object({
+  "uploadURL": zod.string(),
+  "objectPath": zod.string()
+})
+
+
+export const GetListingImageParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetListingImageResponse = zod.unknown()
+
+
 /**
  * Returns server health status
  * @summary Health check

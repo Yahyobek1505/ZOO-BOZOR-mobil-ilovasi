@@ -58,6 +58,7 @@
   "dependencies": {
     "expo-auth-session": "~58.0.17",
     "expo-crypto": "~58.0.7",
+    "expo-file-system": "~58.0.13",
     "expo-secure-store": "~58.0.2",
     "firebase": "^13.2.0",
     "react-native-webview": "14.0.1"

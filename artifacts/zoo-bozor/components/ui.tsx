@@ -13,7 +13,7 @@ export const go = (path: string) => router.push(path as never);
 
 // Metro returns numbers on native and source objects on web.
 // Wrap only user-picked URI strings; preserve bundled asset objects.
-export const src = (s: ImgSrc) => (typeof s === 'string' ? { uri: s } : s);
+export const src = (s: ImgSrc) => (typeof s === 'string' ? { uri: s.startsWith('/api/') ? `https://${process.env.EXPO_PUBLIC_DOMAIN}${s}` : s } : s);
 
 export function useTopInset() {
   const insets = useSafeAreaInsets();

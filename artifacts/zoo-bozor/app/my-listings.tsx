@@ -1,5 +1,6 @@
 import React from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert } from '@/components/AppAlert';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import { C, F } from '@/constants/colors';
@@ -8,13 +9,13 @@ import { useApp } from '@/context/AppContext';
 import { Button, EmptyState, ScreenHeader, go, src, useBottomInset } from '@/components/ui';
 
 export default function MyListings() {
-  const { myListings, deleteListing } = useApp();
+  const { myListings, deleteListing, listingsLoading, refreshListings } = useApp();
   const bottom = useBottomInset();
 
   const confirm = (id: string) =>
     Alert.alert('Eʼlonni oʻchirish', 'Bu eʼlon butunlay oʻchiriladi.', [
       { text: 'Bekor qilish', style: 'cancel' },
-      { text: 'Oʻchirish', style: 'destructive', onPress: () => deleteListing(id) },
+      { text: 'Oʻchirish', style: 'destructive', onPress: () => { void deleteListing(id).catch((err) => Alert.alert('Oʻchirilmadi', err.message)); } },
     ]);
 
   return (
@@ -29,8 +30,13 @@ export default function MyListings() {
       />
       <FlatList
         data={myListings}
+        refreshing={listingsLoading}
+        onRefresh={refreshListings}
         keyExtractor={(l) => l.id}
         contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: bottom + 24 }}
+        ListHeaderComponent={<Text style={{ fontFamily: F.regular, color: C.navy, marginBottom: 12 }}>
+          Serverdagi eʼlonlar barcha qurilmalarda koʻrinadi. «Faqat qurilmada» deb belgilangan eski eʼlonni ochib, tahrirlang va «Hammaga koʻrsatish»ni tanlang. Import ixtiyoriy; asl nusxa oʻchirilmaydi. Mehmonning boshqa maʼlumotlari ham qurilmada saqlanadi.
+        </Text>}
         ListEmptyComponent={
           <EmptyState icon="plus-square" title="Eʼlonlaringiz yoʻq" text="Rasm, narx va manzilni kiriting — eʼlon darhol paydo boʻladi." action={<Button label="Eʼlon joylash" icon="plus" onPress={() => go('/listing/edit')} />} />
         }
@@ -40,15 +46,16 @@ export default function MyListings() {
             <View style={{ flex: 1 }}>
               <Text style={st.title} numberOfLines={1}>{item.title}</Text>
               <Text style={st.meta}>{categoryLabel(item.category)} · {item.city} · {timeAgo(item.createdAt)}</Text>
+              <Text style={st.meta}>{item.localOnly ? 'Faqat qurilmada · import qilinmagan' : 'Hammaga koʻrinadi'}</Text>
               <Text style={st.price}>{formatPrice(item.price)} soʻm</Text>
             </View>
             <View style={{ gap: 8 }}>
-              <Pressable onPress={() => go(`/listing/edit?id=${item.id}`)} style={st.act} accessibilityLabel="Tahrirlash">
+              <Pressable onPress={() => go(`/listing/edit?id=${item.id}`)} style={st.act} accessibilityLabel={item.localOnly ? 'Importni tanlash' : 'Tahrirlash'}>
                 <Feather name="edit-2" size={16} color={C.navy} />
               </Pressable>
-              <Pressable onPress={() => confirm(item.id)} style={[st.act, { backgroundColor: C.secondary }]} accessibilityLabel="Oʻchirish">
+              {!item.localOnly ? <Pressable onPress={() => confirm(item.id)} style={[st.act, { backgroundColor: C.secondary }]} accessibilityLabel="Oʻchirish">
                 <Feather name="trash-2" size={16} color={C.destructive} />
-              </Pressable>
+              </Pressable> : null}
             </View>
           </Pressable>
         )}

@@ -32,6 +32,8 @@ export type Listing = {
   weekSale?: boolean;
   own?: boolean;
   sample?: boolean;
+  ownerId?: string;
+  localOnly?: boolean;
 };
 
 export type Product = {

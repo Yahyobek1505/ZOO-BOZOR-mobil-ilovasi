@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { Alert, Linking, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Linking, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert } from '@/components/AppAlert';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
@@ -15,6 +16,7 @@ import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollV
 import { useBottomInset } from '@/components/ui';
 import { Field } from '@/components/Field';
 import { CurvedHeader, HeaderAction, Hint, Label, PillButton, Select, StepDots, Tile, kit } from '@/components/FormKit';
+import { assetUrl } from '@/lib/listing-images';
 import { ImageFileInput } from '@/components/ImageFileInput';
 
 type Form = {
@@ -48,10 +50,20 @@ const fmtPrice = (v: string) => v.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
 export default function EditListing() {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { getListing, saveListing, profile } = useApp();
+  const { getListing, listingsLoading } = useApp();
+  const existing = id ? getListing(String(id)) : undefined;
+  if (id && !existing && listingsLoading) return <ActivityIndicator color={C.navy} />;
+  if (id && !existing?.own) return <View style={{ flex: 1, backgroundColor: C.white }}>
+    <CurvedHeader title="Eʼlonni tahrirlash" onBack={() => router.back()} />
+    <Text style={{ padding: 24, color: C.navy }}>Eʼlon topilmadi yoki uni tahrirlash huquqingiz yoʻq.</Text>
+  </View>;
+  return <ListingForm key={id ?? 'new'} existing={existing} />;
+}
+
+function ListingForm({ existing }: { existing?: Listing & Extra }) {
+  const { saveListing, profile } = useApp();
   const { accountId: userId } = useSession();
   const bottom = useBottomInset();
-  const existing = id ? (getListing(String(id)) as (Listing & Extra) | undefined) : undefined;
   const editing = !!existing?.own;
   const draftKey = `zoo-bozor:listing-draft:${userId ?? 'guest'}:${editing ? existing?.id : 'new'}`;
 
@@ -60,17 +72,24 @@ export default function EditListing() {
   const [errors, setErrors] = useState<Errors>({});
   const [locating, setLocating] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const listingId = useRef(existing?.id ?? newId());
   const set = <K extends keyof Form>(k: K, v: Form[K]) => { setF((x) => ({ ...x, [k]: v })); setErrors((e) => ({ ...e, [k]: undefined })); };
 
   useEffect(() => {
     let alive = true;
-    AsyncStorage.getItem(draftKey).then((raw) => {
+    AsyncStorage.getItem(draftKey).then(async (accountRaw) => {
+      const raw = accountRaw ?? (userId && !editing ? await AsyncStorage.getItem('zoo-bozor:listing-draft:guest:new') : null);
       if (!alive || !raw) return;
       try {
-        const d = JSON.parse(raw) as { form: Form; step: number; at: number };
+        const d = JSON.parse(raw) as { form: Form; step: number; at: number; listingId?: string };
         Alert.alert('Qoralama topildi', `${new Date(d.at).toLocaleString()} da saqlangan qoralamani tiklaysizmi?`, [
           { text: 'Yoʻq', style: 'cancel' },
-          { text: 'Tiklash', onPress: () => { setF({ ...d.form, geoExact: false }); setStep(Math.min(2, d.step)); setSavedAt(d.at); } },
+          { text: 'Tiklash', onPress: () => {
+            if (!editing && d.listingId) listingId.current = d.listingId;
+            setF({ ...d.form, geoExact: false }); setStep(Math.min(2, d.step)); setSavedAt(d.at);
+          } },
         ]);
       } catch { /* corrupted draft is ignored, never deleted silently */ }
     }).catch(() => undefined);
@@ -80,11 +99,13 @@ export default function EditListing() {
   const saveDraft = async () => {
     try {
       const at = Date.now();
-      await AsyncStorage.setItem(draftKey, JSON.stringify({ form: f, step, at }));
+      await AsyncStorage.setItem(draftKey, JSON.stringify({ form: f, step, at, listingId: listingId.current }));
       setSavedAt(at);
       Alert.alert('Saqlandi', 'Qoralama shu qurilmada saqlandi. Keyinroq davom ettirishingiz mumkin.');
+      return true;
     } catch {
       Alert.alert('Xatolik', 'Qoralamani saqlab boʻlmadi.');
+      return false;
     }
   };
 
@@ -152,20 +173,33 @@ export default function EditListing() {
   };
 
   const next = () => {
-    const e = validate(step);
+    const e = step === 2 ? { ...validate(0), ...validate(1), ...validate(2) } : validate(step);
     setErrors(e);
-    if (Object.keys(e).length) return;
+    if (Object.keys(e).length) {
+      if (step === 2) setStep(Object.keys(validate(0)).length ? 0 : Object.keys(validate(1)).length ? 1 : 2);
+      return;
+    }
     if (step < 2) { setStep(step + 1); return; }
-    submit();
+    void submit();
   };
 
-  const submit = () => {
+  const submit = async () => {
+    if (submittingRef.current) return;
+    if (!userId) {
+      try {
+        await AsyncStorage.setItem(draftKey, JSON.stringify({ form: f, step, at: Date.now(), listingId: listingId.current }));
+        Alert.alert('Hisobingizga kiring', 'Qoralamangiz shu qurilmada saqlandi. Kirganingizdan keyin uni tiklab, eʼlonni hammaga koʻrsatishingiz mumkin.', [
+          { text: 'Keyinroq', style: 'cancel' }, { text: 'Kirish', onPress: () => router.push('/login') },
+        ]);
+      } catch { Alert.alert('Saqlanmadi', 'Qoralamani saqlab boʻlmadi. Ilovani yopmay, qayta urinib koʻring.'); }
+      return;
+    }
     const phone = normalizePhone(f.phone);
     if (!phone) return;
     const cityGeo = CITIES.find((c) => c.name === f.city)?.geo ?? CITIES[0].geo;
     const extra: Extra = { count: Number(f.count), documents: f.documents };
     const base: Listing = {
-      id: editing && existing ? existing.id : newId(),
+      id: listingId.current,
       title: f.title.trim(),
       category: f.category,
       price: Number(f.price),
@@ -188,24 +222,30 @@ export default function EditListing() {
       rating: existing?.rating ?? 0,
       views: existing?.views ?? 0,
       own: true,
+      ownerId: existing?.ownerId,
+      localOnly: existing?.localOnly,
     };
     const listing: Listing = { ...base, ...extra };
+    submittingRef.current = true;
+    setSubmitting(true);
     try {
-      saveListing(listing);
+      await AsyncStorage.setItem(draftKey, JSON.stringify({ form: f, step, at: Date.now(), listingId: listingId.current }));
+      const saved = await saveListing(listing);
+      await AsyncStorage.removeItem(draftKey).catch(() => undefined);
+      router.replace(`/listing/${saved.id}` as never);
     } catch (err) {
-      Alert.alert('Saqlanmadi', err instanceof Error ? err.message : 'Eʼlonni saqlab boʻlmadi.');
-      return;
+      Alert.alert('Saqlanmadi', `${err instanceof Error ? err.message : 'Eʼlonni saqlab boʻlmadi.'} Qoralama oʻchirilmagan.`);
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
-    void AsyncStorage.removeItem(draftKey).catch(() => undefined);
-    if (editing) router.back();
-    else router.replace(`/listing/${listing.id}` as never);
   };
 
   const back = () => {
     if (step > 0) { setStep(step - 1); return; }
     Alert.alert('Chiqish', 'Saqlanmagan oʻzgarishlar yoʻqolishi mumkin. Avval qoralamani saqlang yoki chiqing.', [
       { text: 'Qolish', style: 'cancel' },
-      { text: 'Saqlab chiqish', onPress: () => { void saveDraft().then(() => router.back()); } },
+      { text: 'Saqlab chiqish', onPress: () => { void saveDraft().then((saved) => { if (saved) router.back(); }); } },
       { text: 'Chiqish', style: 'destructive', onPress: () => router.back() },
     ]);
   };
@@ -243,7 +283,7 @@ export default function EditListing() {
                 </Pressable>
                 {f.images.map((uri, i) => (
                   <Pressable key={uri + i} onPress={() => makeCover(i)} style={st.cell} accessibilityLabel={i === 0 ? 'Asosiy surat' : 'Asosiy surat qilish'} testID={`image-${i}`}>
-                    <Image source={{ uri }} style={st.img} contentFit="cover" />
+                    <Image source={{ uri: assetUrl(uri) }} style={st.img} contentFit="cover" />
                     {i === 0 ? <View style={st.cover}><Text style={st.coverTxt}>Asosiy</Text></View> : null}
                     <Pressable onPress={() => removeImage(i)} style={st.remove} hitSlop={6} accessibilityRole="button" accessibilityLabel="Rasmni oʻchirish" testID={`remove-image-${i}`}>
                       <Feather name="x" size={12} color={C.navy} />
@@ -329,15 +369,15 @@ export default function EditListing() {
         <View style={[st.row, { marginTop: 16 }]}>
           {step > 0 ? <PillButton label="Ortga" variant="outline" icon="arrow-left" onPress={() => setStep(step - 1)} flex testID="step-back" /> : null}
           <PillButton
-            label={step < 2 ? 'Davom etish' : editing ? 'Saqlash' : 'Eʼlonni joylash'}
+            label={submitting ? 'Rasmlar va eʼlon yuklanmoqda...' : step < 2 ? 'Davom etish' : existing?.localOnly ? 'Hammaga koʻrsatish' : editing ? 'Saqlash' : 'Eʼlonni joylash'}
             variant={step === 2 ? 'green' : 'navy'}
             icon={step === 2 ? 'check' : 'arrow-right'}
-            onPress={next}
+            onPress={submitting ? () => undefined : next}
             flex
             testID={step === 2 ? 'submit-listing' : 'step-next'}
           />
         </View>
-        {step === 2 ? <Text style={st.note}>Eʼlon hozircha faqat shu qurilmada saqlanadi va boshqa foydalanuvchilarga koʻrinmaydi.</Text> : null}
+        {step === 2 ? <Text style={st.note}>Joylangan eʼlon va uning aloqa raqami barcha foydalanuvchilarga koʻrinadi. Qoralama esa shu qurilmada qoladi.{existing?.localOnly ? ' Eski mahalliy nusxa oʻchirilmaydi.' : ''}</Text> : null}
         {savedAt ? <Text style={st.note}>Qoralama saqlangan: {new Date(savedAt).toLocaleTimeString()}</Text> : null}
       </KeyboardAwareScrollViewCompat>
     </View>

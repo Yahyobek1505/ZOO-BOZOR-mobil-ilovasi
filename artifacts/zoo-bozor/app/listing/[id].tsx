@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Alert, Linking, Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Linking, Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Alert } from '@/components/AppAlert';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';
 import { Feather, Ionicons } from '@expo/vector-icons';
@@ -11,7 +12,7 @@ import { Button, EmptyState, ScreenHeader, go, src, useBottomInset, useTopInset 
 
 export default function ListingDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { getListing, favorites, toggleFavorite, allListings, deleteListing, profile } = useApp();
+  const { getListing, favorites, toggleFavorite, allListings, deleteListing, profile, listingsLoading, listingsError, refreshListings } = useApp();
   const { width } = useWindowDimensions();
   const top = useTopInset();
   const bottom = useBottomInset();
@@ -22,7 +23,7 @@ export default function ListingDetail() {
     return (
       <View style={{ flex: 1, backgroundColor: C.surface }}>
         <ScreenHeader title="Eʼlon" />
-        <EmptyState icon="alert-circle" title="Eʼlon topilmadi" text="U oʻchirilgan boʻlishi mumkin." action={<Button label="Bosh sahifa" onPress={() => router.replace('/' as never)} />} />
+        <EmptyState icon="alert-circle" title={listingsLoading ? 'Yuklanmoqda...' : listingsError ? 'Eʼlonni yuklab boʻlmadi' : 'Eʼlon topilmadi'} text="Internet aloqasini tekshiring yoki qayta urinib koʻring." action={<Button label="Qayta urinish" onPress={refreshListings} />} />
       </View>
     );
   }
@@ -52,9 +53,12 @@ export default function ListingDetail() {
       {
         text: 'Oʻchirish',
         style: 'destructive',
-        onPress: () => {
-          deleteListing(item.id);
-          router.back();
+        onPress: async () => {
+          try {
+            await deleteListing(item.id);
+            if (router.canGoBack()) router.back();
+            else router.replace('/my-listings' as never);
+          } catch (err) { Alert.alert('Oʻchirilmadi', err instanceof Error ? err.message : 'Qayta urinib koʻring.'); }
         },
       },
     ]);
@@ -71,6 +75,7 @@ export default function ListingDetail() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.white }}>
+      {item.localOnly ? <Text style={{ padding: 12, color: C.navy, backgroundColor: C.lime }}>Bu eski eʼlon faqat qurilmada. Uni hammaga koʻrsatish uchun tahrirlash oynasida importni tasdiqlang.</Text> : null}
       <ScrollView contentContainerStyle={{ paddingBottom: 110 + bottom }} showsVerticalScrollIndicator={false}>
         <View style={{ height: 440 }}>
           <ScrollView
@@ -247,7 +252,7 @@ export default function ListingDetail() {
           {item.own ? (
             <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
               <Button label="Tahrirlash" icon="edit-2" variant="navy" style={{ flex: 1 }} onPress={() => go(`/listing/edit?id=${item.id}`)} testID="edit-listing" />
-              <Button label="Oʻchirish" icon="trash-2" variant="danger" onPress={remove} testID="delete-listing" />
+              {!item.localOnly ? <Button label="Oʻchirish" icon="trash-2" variant="danger" onPress={remove} testID="delete-listing" /> : null}
             </View>
           ) : null}
         </View>

@@ -2,3 +2,4 @@
 - [Navigation preferences](navigation-preferences.md) — Figma remains the base, with user-requested translucent navigation and a compact oval posting button.
 - [Contacts and sign-in](contact-and-auth-rules.md) — email/Google account access; numeric-only entry and independent seller phone numbers per listing.
 - [Dependency peer variants](dependency-peer-variants.md) — Firebase's OpenTelemetry peers can split Drizzle into incompatible same-version package instances.
+- [Legacy listing imports](listing-import-policy.md) — publishing old local listings requires an explicit choice; preserve guest originals and retry identities.

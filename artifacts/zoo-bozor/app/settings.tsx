@@ -17,7 +17,7 @@ export default function Settings() {
   const bottom = useBottomInset();
 
   const reset = () =>
-    Alert.alert('Barcha maʼlumotlarni tozalash', 'Eʼlonlaringiz, profil, savat, saqlanganlar va qoralamalar oʻchiriladi.', [
+    Alert.alert('Qurilmadagi maʼlumotlarni tozalash', 'Shu hisobning qurilmadagi eski eʼlonlari, profili, savati, saqlanganlari va xabar qoralamalari oʻchiriladi. Serverdagi ommaviy eʼlonlar oʻchirilmaydi; ularni «Mening eʼlonlarim» orqali alohida oʻchiring.', [
       { text: 'Bekor qilish', style: 'cancel' },
       { text: 'Tozalash', style: 'destructive', onPress: resetAll },
     ]);
@@ -58,10 +58,10 @@ export default function Settings() {
             ZOO-BOZOR — uy hayvonlariga gʻamxoʻr egalar topish va ular uchun mahsulotlar xarid qilish uchun oʻzbek bozori.
           </Text>
           <Text style={st.p}>
-            Bosh sahifa va Marketdagi eʼlon hamda mahsulotlar — namuna katalog. Ulardagi sotuvchi raqamlari yoʻq. Siz joylagan eʼlonlar, profil, savat va qoralamalar faqat shu qurilmada saqlanadi.
+            Namuna deb belgilangan eʼlonlar va Market mahsulotlari — namuna katalog. Ulardagi sotuvchi raqamlari yoʻq. Joylangan haqiqiy eʼlonlar va ularning aloqa raqamlari serverda saqlanib, hammaga koʻrinadi. Profil, savat, xabar qoralamalari va eʼlon qoralamalari shu qurilmada saqlanadi. Eski mahalliy eʼlonlarni import qilish ixtiyoriy.
           </Text>
           <Text style={st.p}>
-            Hali ulanmagan xizmatlar: hisobga kirish, xabar yuborish, toʻlov va hamyon, shikoyatlar, push-bildirishnomalar. Xaritalar Yandex Xaritalar orqali ochiladi.
+            Hali ulanmagan xizmatlar: xabar yuborish, toʻlov va hamyon, shikoyatlar, push-bildirishnomalar. Xaritalar Yandex Xaritalar orqali ochiladi.
           </Text>
           <Text style={st.p}>Muhim: hayvon va uning hujjatlarini xariddan oldin shaxsan tekshiring.</Text>
         </View>
@@ -70,7 +70,7 @@ export default function Settings() {
           <Button label="Tanishuv" icon="compass" variant="ghost" style={{ flex: 1 }} onPress={() => go('/welcome')} />
           <Button label="Kirish" icon="log-in" variant="navy" style={{ flex: 1 }} onPress={() => go('/login')} />
         </View>
-        <Button label="Barcha maʼlumotlarni tozalash" icon="trash-2" variant="danger" onPress={reset} />
+        <Button label="Qurilmadagi maʼlumotlarni tozalash" icon="trash-2" variant="danger" onPress={reset} />
       </ScrollView>
     </View>
   );

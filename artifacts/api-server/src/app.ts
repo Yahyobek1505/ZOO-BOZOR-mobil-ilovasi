@@ -30,5 +30,9 @@ app.use(express.json({ limit: '48kb' }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+app.use((err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  req.log.error({ err }, "API request failed");
+  if (!res.headersSent) res.status(500).json({ error: "Serverda xatolik. Maʼlumot saqlanganini tekshirib, qayta urinib koʻring." });
+});
 
 export default app;

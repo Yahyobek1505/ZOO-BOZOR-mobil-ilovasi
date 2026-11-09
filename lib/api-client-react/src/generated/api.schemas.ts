@@ -41,6 +41,153 @@ export interface GoogleCredential {
   idToken: string;
 }
 
+export type ListingInputCategory = typeof ListingInputCategory[keyof typeof ListingInputCategory];
+
+
+export const ListingInputCategory = {
+  mushuk: 'mushuk',
+  kuchuk: 'kuchuk',
+  qush: 'qush',
+  qoramol: 'qoramol',
+  ot: 'ot',
+  ekzotik: 'ekzotik',
+} as const;
+
+export type ListingInputGender = typeof ListingInputGender[keyof typeof ListingInputGender];
+
+
+export const ListingInputGender = {
+  erkak: 'erkak',
+  urgochi: 'urgochi',
+  aralash: 'aralash',
+  '': '',
+} as const;
+
+export interface ListingLocation {
+  /**
+     * @minimum -90
+     * @maximum 90
+     */
+  lat: number;
+  /**
+     * @minimum -180
+     * @maximum 180
+     */
+  lng: number;
+}
+
+export interface ListingInput {
+  /**
+     * @minLength 6
+     * @maxLength 100
+     * @pattern ^[a-zA-Z0-9_-]+$
+     */
+  id: string;
+  /**
+     * @minLength 3
+     * @maxLength 160
+     */
+  title: string;
+  category: ListingInputCategory;
+  /**
+     * @minimum 1000
+     * @maximum 999999999999
+     */
+  price: number;
+  negotiable: boolean;
+  /**
+     * @minItems 1
+     * @maxItems 8
+     * @items.pattern ^/api/storage/images/[a-f0-9-]{36}$
+     */
+  images: string[];
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  breed: string;
+  /**
+     * @minLength 1
+     * @maxLength 40
+     */
+  age: string;
+  gender: ListingInputGender;
+  /**
+     * @minimum 1
+     * @maximum 999
+     */
+  count?: number;
+  /** @maxLength 160 */
+  documents?: string;
+  /**
+     * @minLength 1
+     * @maxLength 40
+     */
+  weight: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  color: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  city: string;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  district: string;
+  geo: ListingLocation;
+  /**
+     * @minLength 10
+     * @maxLength 10000
+     */
+  description: string;
+  /** @pattern ^998[0-9]{9}$ */
+  phone: string;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  sellerName: string;
+  delivery: boolean;
+  vaccinated: boolean;
+}
+
+export type ListingRecord = ListingInput & {
+  ownerId: string;
+  createdAt: number;
+  rating: number;
+  views: number;
+};
+
+export type ListingImageInputContentType = typeof ListingImageInputContentType[keyof typeof ListingImageInputContentType];
+
+
+export const ListingImageInputContentType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+  'image/heic': 'image/heic',
+  'image/heif': 'image/heif',
+} as const;
+
+export interface ListingImageInput {
+  contentType: ListingImageInputContentType;
+  /**
+     * @minimum 1
+     * @maximum 10485760
+     */
+  size: number;
+}
+
+export interface ListingImageUpload {
+  uploadURL: string;
+  objectPath: string;
+}
+
 export interface HealthStatus {
   status: string;
 }

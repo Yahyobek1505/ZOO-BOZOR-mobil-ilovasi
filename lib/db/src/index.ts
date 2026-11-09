@@ -15,4 +15,4 @@ export const db = drizzle(pool, { schema });
 
 export * from "./schema";
 // Keep SQL operators on the same Drizzle package instance as the DB client.
-export { eq } from 'drizzle-orm';
+export { and, desc, eq, sql } from 'drizzle-orm';
