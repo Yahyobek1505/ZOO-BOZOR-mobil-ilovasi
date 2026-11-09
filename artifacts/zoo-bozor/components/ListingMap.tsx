@@ -10,7 +10,7 @@ export default function ListingMap({ pins, me, onSelect }: ListingMapProps) {
   return (
     <WebView
       key={attempt}
-      source={{ html, baseUrl: 'https://www.openstreetmap.org' }}
+      source={{ html, baseUrl: `https://${process.env.EXPO_PUBLIC_DOMAIN || 'www.openstreetmap.org'}` }}
       originWhitelist={['*']}
       style={{ flex: 1, backgroundColor: C.secondary }}
       javaScriptEnabled

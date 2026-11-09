@@ -16,7 +16,7 @@ export default function ListingMap({ pins, me, onSelect }: ListingMapProps) {
     ref,
     title: 'ZOO-BOZOR — eʼlonlar xaritasi',
     srcDoc: html,
-    sandbox: 'allow-scripts allow-popups allow-popups-to-escape-sandbox',
+    sandbox: 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox',
     style: { width: '100%', height: '100%', border: 0, display: 'block' },
   });
 }
