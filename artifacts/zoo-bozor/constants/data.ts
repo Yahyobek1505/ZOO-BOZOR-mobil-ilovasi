@@ -1,4 +1,6 @@
-export type ImgSrc = number | string;
+import type { ImageSource } from 'expo-image';
+
+export type ImgSrc = number | string | ImageSource;
 
 export type GeoPoint = { lat: number; lng: number };
 

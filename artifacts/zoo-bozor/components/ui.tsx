@@ -11,7 +11,9 @@ import { useApp } from '@/context/AppContext';
 
 export const go = (path: string) => router.push(path as never);
 
-export const src = (s: ImgSrc) => (typeof s === 'number' ? s : { uri: s });
+// Metro returns numbers on native and source objects on web.
+// Wrap only user-picked URI strings; preserve bundled asset objects.
+export const src = (s: ImgSrc) => (typeof s === 'string' ? { uri: s } : s);
 
 export function useTopInset() {
   const insets = useSafeAreaInsets();
