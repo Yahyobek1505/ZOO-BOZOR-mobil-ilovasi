@@ -1,6 +1,6 @@
 import { C } from '@/constants/colors';
 import { GeoPoint } from '@/constants/data';
-import { yandexDocument } from './yandex-map-document';
+import { googleDocument } from './google-map-document';
 
 export type MapPin = GeoPoint & { id: string; label: string; title: string; imageUrl?: string };
 export type ListingMapProps = {
@@ -10,10 +10,10 @@ export type ListingMapProps = {
 };
 
 // Browser map keys are intentionally client-visible and must be domain-restricted.
-// Keep the current provider explicitly labelled until the Yandex key is configured.
+// Keep the current provider explicitly labelled until the Google key is configured.
 export function mapDocument(pins: MapPin[], me: GeoPoint | null) {
-  const key = process.env.EXPO_PUBLIC_YANDEX_MAPS_API_KEY;
-  if (key) return yandexDocument(pins, me, key);
+  const key = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
+  if (key) return googleDocument(pins, me, key);
   const payload = JSON.stringify({ pins, me }).replace(/</g, '\\u003c');
   return `<!doctype html>
 <html lang="uz"><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
@@ -29,7 +29,7 @@ html,body,#map{height:100%;margin:0;background:${C.secondary};font-family:Arial,
 .leaflet-bottom{bottom:155px}
 #provider{position:absolute;top:120px;left:16px;z-index:500;background:${C.white};color:${C.mutedForeground};font-size:9px;padding:5px 8px;border-radius:10px;pointer-events:none;max-width:240px}
 #status{position:absolute;left:12px;right:12px;top:12px;z-index:1000;padding:12px;border-radius:14px;background:${C.white};color:${C.navy};font-size:12px;text-align:center;box-shadow:0 2px 12px #0001}
-</style></head><body><div id="map"></div><div id="provider">OpenStreetMap · Yandex API kaliti ulanmagan</div><div id="status">Xarita yuklanmoqda…</div>
+</style></head><body><div id="map"></div><div id="provider">OpenStreetMap · Google Maps kaliti ulanmagan</div><div id="status">Xarita yuklanmoqda…</div>
 <script>
 window.onerror=function(){document.getElementById('status').style.display='block';document.getElementById('status').textContent='Xarita yuklanmadi. Internet aloqasini tekshiring va qayta urining.';};
 </script>

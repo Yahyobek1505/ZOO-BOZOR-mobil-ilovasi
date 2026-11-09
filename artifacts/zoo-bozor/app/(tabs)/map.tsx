@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, Image as NativeImage, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
 import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, F } from '@/constants/colors';
@@ -42,6 +43,10 @@ export default function MapScreen() {
   const [me, setMe] = useState<GeoPoint | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [mapOpened, setMapOpened] = useState(false);
+  useFocusEffect(useCallback(() => {
+    setMapOpened(true);
+  }, []));
   const [perm, requestPerm] = Location.useForegroundPermissions();
 
   const pins = useMemo(() => allListings.map((l) => ({
@@ -97,7 +102,7 @@ export default function MapScreen() {
   return (
     <View style={st.root}>
       <View style={StyleSheet.absoluteFill}>
-        <ListingMap pins={pins} me={me} onSelect={setSelectedId} />
+        {mapOpened ? <ListingMap pins={pins} me={me} onSelect={setSelectedId} /> : null}
       </View>
 
       <View pointerEvents="box-none" style={[st.topWrap, { top: topPad }]}>
