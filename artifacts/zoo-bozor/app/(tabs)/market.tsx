@@ -30,7 +30,7 @@ export default function MarketScreen() {
   const sale = PRODUCTS.filter((p) => p.oldPrice || p.sold > 100);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: C.surface }} contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+    <ScrollView style={{ flex: 1, backgroundColor: C.surface }} contentContainerStyle={{ paddingBottom: 170 }} showsVerticalScrollIndicator={false}>
       <BrandHeader title="Market" icon="shopping-bag" showCart>
         <SearchBar value={q} onChangeText={setQ} placeholder="Kategoriya boʻyicha qidirish" onFilter={cycleSort} filterIcon="bar-chart-2" />
       </BrandHeader>

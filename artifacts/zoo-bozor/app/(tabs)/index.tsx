@@ -35,7 +35,7 @@ export default function HomeScreen() {
   );
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: C.surface }} contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+    <ScrollView style={{ flex: 1, backgroundColor: C.surface }} contentContainerStyle={{ paddingBottom: 170 }} showsVerticalScrollIndicator={false}>
       <BrandHeader>
         <SearchBar value={q} onChangeText={setQ} onSubmit={submit} placeholder="Nima qidiryapsiz?" onFilter={submit} filterIcon="search" />
       </BrandHeader>

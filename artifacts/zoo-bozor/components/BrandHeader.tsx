@@ -39,7 +39,6 @@ export function BrandHeader({
           {showCart ? (
             <IconBtn label="Savat" name="shopping-cart" onPress={() => go('/cart')} badge={cartCount || undefined} testID="cart-btn" />
           ) : null}
-          <IconBtn label="Eʼlon qoʻshish" name="plus" bg={C.lime} color={C.navy} size={20} onPress={() => go('/listing/edit')} testID="add-listing" />
           <IconBtn label="Xabarlar" name="mail" onPress={() => go('/messages')} badge={conversations.length || undefined} />
           <IconBtn label="Menyu" name="menu" onPress={openMenu} />
         </View>

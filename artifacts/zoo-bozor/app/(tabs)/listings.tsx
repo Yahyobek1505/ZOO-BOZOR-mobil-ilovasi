@@ -43,7 +43,7 @@ export default function ListingsScreen() {
       keyExtractor={(l) => l.id}
       numColumns={2}
       columnWrapperStyle={{ gap: 12, paddingHorizontal: 16 }}
-      contentContainerStyle={{ gap: 12, paddingBottom: 120 }}
+      contentContainerStyle={{ gap: 12, paddingBottom: 170 }}
       keyboardShouldPersistTaps="handled"
       ListHeaderComponent={
         <View>

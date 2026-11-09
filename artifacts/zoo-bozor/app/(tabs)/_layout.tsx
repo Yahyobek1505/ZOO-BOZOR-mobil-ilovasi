@@ -1,16 +1,28 @@
 import React from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
 import { Tabs } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import type { BottomTabBarProps } from 'expo-router/tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { C } from '@/constants/colors';
-import { BrandMark } from '@/components/ui';
+import { C, F } from '@/constants/colors';
+import { BrandMark, go } from '@/components/ui';
+
+function PostCta({ style }: { style?: object }) {
+  return (
+    <Pressable onPress={() => go('/listing/edit')} accessibilityRole="button" accessibilityLabel="Eʼlon berish" testID="add-listing" style={({ pressed }) => [st.cta, style, pressed && { transform: [{ scale: 0.96 }] }]}>
+      <Ionicons name="megaphone" size={19} color={C.white} />
+      <Text style={st.ctaText}>Eʼlon berish</Text>
+    </Pressable>
+  );
+}
 
 function NativeTabLayout() {
+  const insets = useSafeAreaInsets();
   return (
+    <View style={{ flex: 1 }}>
     <NativeTabs>
       <NativeTabs.Trigger name="market">
         <NativeTabs.Trigger.Icon sf={{ default: 'bag', selected: 'bag.fill' }} />
@@ -33,6 +45,10 @@ function NativeTabLayout() {
         <NativeTabs.Trigger.Label>Profil</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
     </NativeTabs>
+      <View pointerEvents="box-none" style={[st.nativeCta, { bottom: insets.bottom + 62 }]}>
+        <PostCta />
+      </View>
+    </View>
   );
 }
 
@@ -55,7 +71,14 @@ function BrandTabBar({ state, navigateToTab }: BottomTabBarProps) {
   const bottom = Platform.OS === 'web' ? 34 : Math.max(insets.bottom, 10);
   return (
     <View pointerEvents="box-none" style={[st.outer, { paddingBottom: bottom }]}>
+      <PostCta style={{ alignSelf: 'center', marginBottom: 8 }} />
       <View style={st.bar}>
+        {Platform.OS === 'web' ? (
+          <View style={[StyleSheet.absoluteFill, st.webGlass]} />
+        ) : (
+          <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+        )}
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: C.glassNavy }]} />
         {state.routes.map((route, i) => {
           const focused = state.index === i;
           const onPress = () => {
@@ -65,7 +88,7 @@ function BrandTabBar({ state, navigateToTab }: BottomTabBarProps) {
             return (
               <Pressable key={route.key} onPress={onPress} style={st.item} accessibilityLabel={LABELS.index} testID="tab-index">
                 <View style={[st.home, focused && { backgroundColor: C.lime }]}>
-                  <BrandMark size={26} color={focused ? C.navy : C.white} />
+                  <BrandMark size={24} color={focused ? C.navy : C.white} />
                 </View>
               </Pressable>
             );
@@ -84,7 +107,7 @@ function BrandTabBar({ state, navigateToTab }: BottomTabBarProps) {
 
 function ClassicTabLayout() {
   return (
-    <Tabs screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: C.surface } }} tabBar={(p) => <BrandTabBar {...p} />}>
+    <Tabs screenOptions={{ headerShown: false, lazy: false, freezeOnBlur: true, sceneStyle: { backgroundColor: C.surface } }} tabBar={(p) => <BrandTabBar {...p} />}>
       <Tabs.Screen name="market" options={{ title: 'Market' }} />
       <Tabs.Screen name="map" options={{ title: 'Xarita' }} />
       <Tabs.Screen name="index" options={{ title: 'Bosh sahifa' }} />
@@ -104,9 +127,11 @@ const st = StyleSheet.create({
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: C.navy,
     borderRadius: 30,
-    height: 64,
+    overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.glassBorder,
+    height: 60,
     paddingHorizontal: 6,
     shadowColor: C.navy,
     shadowOpacity: 0.25,
@@ -114,7 +139,11 @@ const st = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 10,
   },
+  webGlass: { backdropFilter: 'blur(18px) saturate(160%)', WebkitBackdropFilter: 'blur(18px) saturate(160%)' } as object,
+  nativeCta: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
+  cta: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.navy, height: 40, paddingHorizontal: 18, borderRadius: 20, borderWidth: 1, borderColor: C.glassBorder, shadowColor: C.navy, shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 8 },
+  ctaText: { fontFamily: F.dExtra, fontSize: 14, color: C.lime, letterSpacing: 0.2 },
   item: { flex: 1, alignItems: 'center', justifyContent: 'center', height: '100%' },
-  home: { width: 50, height: 50, borderRadius: 25, backgroundColor: C.navySoft, alignItems: 'center', justifyContent: 'center' },
+  home: { width: 46, height: 46, borderRadius: 23, backgroundColor: C.navySoft, alignItems: 'center', justifyContent: 'center' },
   dot: { width: 5, height: 5, borderRadius: 3, marginTop: 5, backgroundColor: 'transparent' },
 });

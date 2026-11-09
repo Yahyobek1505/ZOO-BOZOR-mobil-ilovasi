@@ -25,6 +25,8 @@ const colors = {
     surface: '#f6f6f6',
     star: '#f5b301',
     sale: '#e5383b',
+    glassNavy: 'rgba(8,13,32,0.72)',
+    glassBorder: 'rgba(255,255,255,0.12)',
     overlay: 'rgba(8,13,32,0.55)',
   },
   radius: 16,

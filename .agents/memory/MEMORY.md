@@ -1,1 +1,2 @@
 - [Figma asset downloads](figma-assets.md) — validate downloaded file bytes; successful HTTP status alone does not prove a usable image.
+- [Navigation preferences](navigation-preferences.md) — Figma remains the base, with user-requested translucent navigation and a compact oval posting button.

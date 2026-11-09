@@ -21,7 +21,12 @@
       "output": "static"
     },
     "plugins": [
-      "expo-router",
+      [
+        "expo-router",
+        {
+          "asyncRoutes": false
+        }
+      ],
       [
         "expo-splash-screen",
         {

@@ -37,7 +37,7 @@ export default function ProfileScreen() {
   ];
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: C.surface }} contentContainerStyle={{ paddingTop: top + 8, paddingBottom: 120, paddingHorizontal: 16 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: C.surface }} contentContainerStyle={{ paddingTop: top + 8, paddingBottom: 170, paddingHorizontal: 16 }}>
       <View style={st.head}>
         <View style={st.row}>
           <Feather name="user" size={24} color={C.navy} />
