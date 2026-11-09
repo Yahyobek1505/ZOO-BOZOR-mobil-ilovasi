@@ -13,7 +13,9 @@ export type Listing = {
   images: ImgSrc[];
   breed: string;
   age: string;
-  gender: 'erkak' | 'urgochi' | '';
+  gender: 'erkak' | 'urgochi' | 'aralash' | '';
+  count?: number;
+  documents?: string;
   weight: string;
   color: string;
   city: string;

@@ -1,2 +1,3 @@
 - [Figma asset downloads](figma-assets.md) — validate downloaded file bytes; successful HTTP status alone does not prove a usable image.
 - [Navigation preferences](navigation-preferences.md) — Figma remains the base, with user-requested translucent navigation and a compact oval posting button.
+- [Contacts and sign-in](contact-and-auth-rules.md) — email/Google account access; numeric-only entry and independent seller phone numbers per listing.

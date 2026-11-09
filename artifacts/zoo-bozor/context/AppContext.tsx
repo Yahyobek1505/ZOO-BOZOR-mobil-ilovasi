@@ -1,6 +1,9 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Listing, SAMPLE_LISTINGS } from '@/constants/data';
+import { normalizePhone } from '@/constants/input';
+import { C, F } from '@/constants/colors';
 
 export type Profile = {
   name: string;
@@ -63,25 +66,44 @@ type Ctx = Stored & {
 
 const AppContext = createContext<Ctx | null>(null);
 
-export function AppProvider({ children }: { children: React.ReactNode }) {
+export function AppProvider({ children, storageKey = KEY, initialProfile }: {
+  children: React.ReactNode;
+  storageKey?: string;
+  initialProfile?: Partial<Profile>;
+}) {
   const [state, setState] = useState<Stored>(DEFAULTS);
   const [ready, setReady] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const seedProfile = useRef(initialProfile);
+  const saveWarned = useRef(false);
 
   useEffect(() => {
-    AsyncStorage.getItem(KEY)
+    let active = true;
+    setLoadError(false);
+    AsyncStorage.getItem(storageKey)
       .then((raw) => {
+        if (!active) return;
         if (raw) {
           const parsed = JSON.parse(raw) as Partial<Stored>;
-          setState({ ...DEFAULTS, ...parsed, prefs: { ...DEFAULTS.prefs, ...(parsed.prefs ?? {}) } });
+          setState({ ...DEFAULTS, ...parsed, profile: { ...EMPTY_PROFILE, ...seedProfile.current, ...(parsed.profile ?? {}) }, prefs: { ...DEFAULTS.prefs, ...(parsed.prefs ?? {}) } });
+        } else {
+          setState({ ...DEFAULTS, profile: { ...EMPTY_PROFILE, ...seedProfile.current } });
         }
+        setReady(true);
       })
-      .catch(() => {})
-      .finally(() => setReady(true));
-  }, []);
+      .catch(() => { if (active) setLoadError(true); });
+    return () => { active = false; };
+  }, [storageKey, attempt]);
 
   useEffect(() => {
-    if (ready) AsyncStorage.setItem(KEY, JSON.stringify(state)).catch(() => {});
-  }, [state, ready]);
+    if (ready) AsyncStorage.setItem(storageKey, JSON.stringify(state)).catch(() => {
+      if (!saveWarned.current) {
+        saveWarned.current = true;
+        Alert.alert('Saqlashda xatolik', 'Qurilmada maʼlumotni saqlab boʻlmadi. Ilovani yopishdan oldin xotira va brauzer ruxsatlarini tekshiring.');
+      }
+    });
+  }, [state, ready, storageKey]);
 
   const update = useCallback((fn: (s: Stored) => Stored) => setState((s) => fn(s)), []);
 
@@ -100,11 +122,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           ...s,
           favoriteProducts: s.favoriteProducts.includes(id) ? s.favoriteProducts.filter((x) => x !== id) : [id, ...s.favoriteProducts],
         })),
-      saveListing: (l) =>
+      saveListing: (l) => {
+        const phone = normalizePhone(l.phone);
+        if (!phone) throw new Error('Eʼlon uchun haqiqiy telefon raqamini kiriting.');
         update((s) => {
+          const saved = { ...l, phone };
           const exists = s.myListings.some((x) => x.id === l.id);
-          return { ...s, myListings: exists ? s.myListings.map((x) => (x.id === l.id ? l : x)) : [l, ...s.myListings] };
-        }),
+          return { ...s, myListings: exists ? s.myListings.map((x) => (x.id === l.id ? saved : x)) : [saved, ...s.myListings] };
+        });
+      },
       deleteListing: (id) =>
         update((s) => ({
           ...s,
@@ -112,7 +138,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           favorites: s.favorites.filter((x) => x !== id),
           conversations: s.conversations.filter((c) => c.listingId !== id),
         })),
-      updateProfile: (p) => update((s) => ({ ...s, profile: p })),
+      updateProfile: (p) => {
+        const phone = p.phone ? normalizePhone(p.phone) : '';
+        if (phone === null) throw new Error('Telefon raqamini toʻliq kiriting.');
+        update((s) => ({ ...s, profile: { ...p, phone } }));
+      },
       addToCart: (id) =>
         update((s) => {
           const ex = s.cart.find((c) => c.productId === id);
@@ -149,6 +179,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [state, ready, allListings, update],
   );
 
+  if (!ready) return (
+    <View style={{ flex: 1, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 16 }}>
+      {loadError ? <>
+        <Text style={{ fontFamily: F.medium, color: C.navy, textAlign: 'center' }}>Saqlangan maʼlumotlarni oʻqib boʻlmadi. Ular oʻchirilmagan.</Text>
+        <Pressable onPress={() => setAttempt((n) => n + 1)} accessibilityRole="button"><Text style={{ fontFamily: F.bold, color: C.navy }}>Qayta urinish</Text></Pressable>
+      </> : <ActivityIndicator color={C.navy} />}
+    </View>
+  );
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 

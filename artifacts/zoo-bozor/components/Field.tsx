@@ -1,15 +1,35 @@
 import React from 'react';
 import { StyleSheet, Switch, Text, TextInput, TextInputProps, View } from 'react-native';
 import { C, F } from '@/constants/colors';
+import { decimalOnly, digitsOnly, formatBirthInput } from '@/constants/input';
 
-export function Field({ label, error, ...props }: TextInputProps & { label: string; error?: string }) {
+type FieldProps = TextInputProps & {
+  label: string;
+  error?: string;
+  inputKind?: 'text' | 'digits' | 'decimal' | 'date';
+};
+
+export function Field({ label, error, inputKind, ...props }: FieldProps) {
+  const kind = inputKind ?? (
+    props.keyboardType === 'decimal-pad' ? 'decimal'
+      : ['phone-pad', 'number-pad', 'numeric'].includes(props.keyboardType ?? '') ? 'digits' : 'text'
+  );
+  const sanitize = kind === 'date' ? formatBirthInput : kind === 'decimal' ? decimalOnly : kind === 'digits' ? digitsOnly : (value: string) => value;
+  const numeric = kind !== 'text';
   return (
     <View style={{ gap: 6 }}>
       <Text style={st.label}>{label}</Text>
       <TextInput
         placeholderTextColor={C.mutedForeground}
         {...props}
-        style={[st.input, props.multiline && { height: 110, textAlignVertical: 'top', paddingTop: 12 }, error ? { borderColor: C.destructive } : null]}
+        accessibilityLabel={props.accessibilityLabel ?? label}
+        inputMode={kind === 'decimal' ? 'decimal' : kind === 'digits' || kind === 'date' ? 'numeric' : props.inputMode}
+        maxLength={numeric ? undefined : props.maxLength}
+        onChangeText={(value) => {
+          const clean = sanitize(value);
+          props.onChangeText?.(props.maxLength && numeric ? clean.slice(0, props.maxLength) : clean);
+        }}
+        style={[st.input, props.style, props.multiline && { height: 110, textAlignVertical: 'top', paddingTop: 12 }, error ? { borderColor: C.destructive } : null]}
       />
       {error ? <Text style={st.err}>{error}</Text> : null}
     </View>

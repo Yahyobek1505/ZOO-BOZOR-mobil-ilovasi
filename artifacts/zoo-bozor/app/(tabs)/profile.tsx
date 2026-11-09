@@ -5,11 +5,16 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import { C, F } from '@/constants/colors';
 import { useApp } from '@/context/AppContext';
 import { Button, EmptyState, ListingCard, go, useTopInset } from '@/components/ui';
+import { useAuth, useUser } from '@clerk/expo';
+import { SignOutButton } from '@/components/SignOutButton';
+import { displayPhone } from '@/constants/input';
 
 type Tab = 'info' | 'ads' | 'menu';
 
 export default function ProfileScreen() {
   const top = useTopInset();
+  const { isSignedIn } = useAuth();
+  const { user } = useUser();
   const { profile, myListings, favorites, favoriteProducts, cart, conversations } = useApp();
   const [tab, setTab] = useState<Tab>('info');
   const initials = profile.name
@@ -18,7 +23,7 @@ export default function ProfileScreen() {
 
   const rows: { icon: keyof typeof Feather.glyphMap; label: string; value: string }[] = [
     { icon: 'user', label: 'Ism-familiya', value: profile.name },
-    { icon: 'smartphone', label: 'Telefon raqami', value: profile.phone },
+    { icon: 'smartphone', label: 'Telefon raqami', value: displayPhone(profile.phone) },
     { icon: 'at-sign', label: 'Elektron pochta', value: profile.email },
     { icon: 'map-pin', label: 'Hudud', value: profile.region },
     { icon: 'calendar', label: 'Tugʻilgan sana', value: profile.birth },
@@ -68,7 +73,8 @@ export default function ProfileScreen() {
             </View>
           </Pressable>
           <View style={{ flex: 1, marginLeft: 14 }}>
-            <Text style={st.name} numberOfLines={1}>{profile.name || 'Mehmon'}</Text>
+            <Text style={st.name} numberOfLines={1} testID="user-name-display">{profile.name || user?.fullName || (isSignedIn ? 'Foydalanuvchi' : 'Mehmon')}</Text>
+            {isSignedIn ? <Text style={[st.region, { marginTop: 4 }]} numberOfLines={1} testID="user-email-display">{user?.primaryEmailAddress?.emailAddress}</Text> : null}
             <View style={[st.row, { marginTop: 4, gap: 4 }]}>
               <Feather name="map-pin" size={12} color={C.mutedForeground} />
               <Text style={st.region}>{profile.region || 'Hudud koʻrsatilmagan'}</Text>
@@ -109,10 +115,11 @@ export default function ProfileScreen() {
 
       {tab === 'info' ? (
         <View style={st.list}>
-          {!profile.name ? (
+          {!isSignedIn ? (
             <View style={{ padding: 12, gap: 10 }}>
               <Text style={st.guest}>Siz mehmon sifatida foydalanyapsiz. Maʼlumotlaringizni kiriting — ular faqat shu qurilmada saqlanadi.</Text>
-              <Button label="Profilni toʻldirish" icon="edit-2" onPress={() => go('/profile-edit')} />
+              <Button label="Hisobga kirish" icon="log-in" onPress={() => go('/login')} />
+              <Button label="Profilni toʻldirish" icon="edit-2" variant="ghost" onPress={() => go('/profile-edit')} />
             </View>
           ) : null}
           {rows.map((r, i) => (
@@ -144,7 +151,7 @@ export default function ProfileScreen() {
 
       {tab === 'menu' ? (
         <View style={st.list}>
-          {menu.map((m, i) => (
+          {menu.filter((m) => !isSignedIn || m.to !== '/login').map((m, i) => (
             <Pressable key={m.label} onPress={() => go(m.to.replace('#help', ''))} style={[st.infoRow, i < menu.length - 1 && st.sep]}>
               <Feather name={m.icon} size={20} color={C.navy} />
               <Text style={[st.infoVal, { flex: 1 }]}>{m.label}</Text>
@@ -154,6 +161,8 @@ export default function ProfileScreen() {
           ))}
         </View>
       ) : null}
+
+      {isSignedIn ? <SignOutButton /> : null}
 
       <View style={[st.row, { justifyContent: 'center', gap: 6, marginTop: 18 }]}>
         <Feather name="lock" size={12} color={C.mutedForeground} />

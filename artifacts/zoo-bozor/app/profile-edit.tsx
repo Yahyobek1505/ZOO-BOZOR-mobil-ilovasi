@@ -6,15 +6,17 @@ import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { C, F } from '@/constants/colors';
 import { CITIES } from '@/constants/data';
+import { digitsOnly, normalizePhone, validBirthDate } from '@/constants/input';
 import { Profile, useApp } from '@/context/AppContext';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
-import { Button, Chip, ScreenHeader, useBottomInset } from '@/components/ui';
-import { Field, fieldStyles } from '@/components/Field';
+import { useBottomInset } from '@/components/ui';
+import { Field } from '@/components/Field';
+import { CurvedHeader, HeaderAction, Label, PillButton, Select, Tile } from '@/components/FormKit';
 
 export default function ProfileEdit() {
   const { profile, updateProfile } = useApp();
   const bottom = useBottomInset();
-  const [p, setP] = useState<Profile>(profile);
+  const [p, setP] = useState<Profile>({ ...profile, phone: digitsOnly(profile.phone).slice(0, 12) });
   const [errors, setErrors] = useState<Partial<Record<keyof Profile, string>>>({});
   const set = <K extends keyof Profile>(k: K, v: Profile[K]) => setP((x) => ({ ...x, [k]: v }));
 
@@ -32,64 +34,62 @@ export default function ProfileEdit() {
 
   const save = () => {
     const e: typeof errors = {};
+    const phone = p.phone.trim() ? normalizePhone(p.phone) : '';
     if (p.name.trim() && p.name.trim().length < 2) e.name = 'Ism juda qisqa';
-    if (p.phone.trim() && p.phone.replace(/[^\d]/g, '').length < 9) e.phone = 'Telefon raqami notoʻgʻri';
+    if (phone === null) e.phone = 'Raqamni 9 xonali yoki 998 bilan 12 xonali kiriting';
     if (p.email.trim() && !/^\S+@\S+\.\S+$/.test(p.email.trim())) e.email = 'Elektron pochta notoʻgʻri';
-    if (p.birth.trim() && !/^\d{2}\.\d{2}\.\d{4}$/.test(p.birth.trim())) e.birth = 'Format: KK.OO.YYYY';
+    if (p.birth.trim() && !validBirthDate(p.birth.trim())) e.birth = 'Haqiqiy sanani KK.OO.YYYY formatida kiriting';
     setErrors(e);
     if (Object.keys(e).length) return;
-    updateProfile({ ...p, name: p.name.trim(), phone: p.phone.trim(), email: p.email.trim(), birth: p.birth.trim() });
+    try {
+      updateProfile({ ...p, name: p.name.trim(), phone: phone ?? '', email: p.email.trim(), birth: p.birth.trim() });
+    } catch (err) {
+      Alert.alert('Saqlanmadi', err instanceof Error ? err.message : 'Profilni saqlab boʻlmadi.');
+      return;
+    }
     router.back();
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.surface }}>
-      <ScreenHeader title="Profilni tahrirlash" />
-      <KeyboardAwareScrollViewCompat contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: bottom + 40 }} bottomOffset={40}>
+    <View style={{ flex: 1, backgroundColor: C.white }}>
+      <CurvedHeader title="Profilni tahrirlash" onBack={() => router.back()} right={<HeaderAction label="Saqlash" onPress={save} testID="save-profile-header" />} />
+      <KeyboardAwareScrollViewCompat contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: bottom + 40 }} bottomOffset={40}>
         <View style={{ alignItems: 'center', gap: 8 }}>
-          <Pressable onPress={pickAvatar} style={st.avatar} testID="pick-avatar">
-            {p.avatar ? <Image source={{ uri: p.avatar }} style={{ width: '100%', height: '100%', borderRadius: 50 }} /> : <Feather name="user" size={40} color={C.lime} />}
-            <View style={st.cam}>
-              <Feather name="camera" size={14} color={C.navy} />
-            </View>
+          <Pressable onPress={pickAvatar} style={st.avatar} testID="pick-avatar" accessibilityRole="button" accessibilityLabel="Profil rasmini tanlash">
+            {p.avatar ? <Image source={{ uri: p.avatar }} style={{ width: '100%', height: '100%', borderRadius: 52 }} /> : <Feather name="user" size={42} color={C.lime} />}
+            <View style={st.cam}><Feather name="camera" size={15} color={C.navy} /></View>
           </Pressable>
           {p.avatar ? (
-            <Pressable onPress={() => set('avatar', '')}>
+            <Pressable onPress={() => set('avatar', '')} testID="remove-avatar" accessibilityRole="button">
               <Text style={st.link}>Rasmni olib tashlash</Text>
             </Pressable>
           ) : null}
         </View>
-        <View style={fieldStyles.group}>
-          <Field label="Ism-familiya" value={p.name} onChangeText={(v) => set('name', v)} placeholder="Ismingiz" error={errors.name} testID="name" />
-          <Field label="Telefon raqami" value={p.phone} onChangeText={(v) => set('phone', v)} keyboardType="phone-pad" placeholder="+998" error={errors.phone} />
-          <Field label="Elektron pochta" value={p.email} onChangeText={(v) => set('email', v)} keyboardType="email-address" autoCapitalize="none" placeholder="pochta@misol.uz" error={errors.email} />
-          <Field label="Tugʻilgan sana" value={p.birth} onChangeText={(v) => set('birth', v)} placeholder="15.11.1994" keyboardType="numbers-and-punctuation" error={errors.birth} />
-        </View>
-        <View style={fieldStyles.group}>
-          <Text style={fieldStyles.groupTitle}>Hudud</Text>
-          <View style={st.wrap}>
-            {CITIES.map((c) => (
-              <Chip key={c.name} label={c.name} active={p.region === c.name} onPress={() => set('region', c.name)} />
-            ))}
+        <Field label="Ism-familiya" value={p.name} onChangeText={(v) => set('name', v)} placeholder="Ismingiz" error={errors.name} testID="name" style={st.input} />
+        <Field label="Telefon raqami" value={p.phone} onChangeText={(v) => set('phone', v)} keyboardType="phone-pad" placeholder="998901234567" maxLength={12} error={errors.phone} testID="phone" style={st.input} />
+        <Field label="Elektron pochta" value={p.email} onChangeText={(v) => set('email', v)} keyboardType="email-address" autoCapitalize="none" placeholder="pochta@misol.uz" error={errors.email} testID="email" style={st.input} />
+        <Field label="Tugʻilgan sana" value={p.birth} onChangeText={(v) => set('birth', v)} inputKind="date" keyboardType="number-pad" maxLength={10} placeholder="15.11.1994" error={errors.birth} testID="birth" style={st.input} />
+        <Select label="Hudud" value={p.region} onChange={(v) => set('region', v)} options={CITIES.map((c) => ({ value: c.name, label: c.name }))} testID="region" />
+        <View style={{ gap: 8 }}>
+          <Label text="Jinsi" />
+          <View style={st.row}>
+            <Tile label="Erkak" active={p.gender === 'erkak'} onPress={() => set('gender', 'erkak')} testID="gender-erkak" />
+            <Tile label="Ayol" active={p.gender === 'ayol'} onPress={() => set('gender', 'ayol')} testID="gender-ayol" />
           </View>
-          <Text style={fieldStyles.groupTitle}>Jinsi</Text>
-          <View style={st.wrap}>
-            <Chip label="Erkak" active={p.gender === 'erkak'} onPress={() => set('gender', 'erkak')} />
-            <Chip label="Ayol" active={p.gender === 'ayol'} onPress={() => set('gender', 'ayol')} />
-            <Chip label="Koʻrsatmaslik" active={p.gender === ''} onPress={() => set('gender', '')} />
-          </View>
+          <Tile label="Koʻrsatmaslik" active={p.gender === ''} onPress={() => set('gender', '')} testID="gender-none" />
         </View>
-        <Button label="Saqlash" icon="check" onPress={save} testID="save-profile" />
-        <Text style={st.hint}>Maʼlumotlar faqat shu qurilmada saqlanadi.</Text>
+        <PillButton label="Saqlash" onPress={save} testID="save-profile" />
+        <Text style={st.hint}>Telefon raqami ixtiyoriy va tasdiqlanmagan. Maʼlumotlar shu hisob uchun qurilmada saqlanadi.</Text>
       </KeyboardAwareScrollViewCompat>
     </View>
   );
 }
 
 const st = StyleSheet.create({
-  avatar: { width: 100, height: 100, borderRadius: 50, backgroundColor: C.navy, alignItems: 'center', justifyContent: 'center' },
-  cam: { position: 'absolute', right: 0, bottom: 2, width: 30, height: 30, borderRadius: 10, backgroundColor: C.lime, alignItems: 'center', justifyContent: 'center' },
+  avatar: { width: 104, height: 104, borderRadius: 52, backgroundColor: C.navy, alignItems: 'center', justifyContent: 'center' },
+  cam: { position: 'absolute', right: 0, bottom: 2, width: 32, height: 32, borderRadius: 16, backgroundColor: C.lime, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: C.white },
   link: { fontFamily: F.semibold, fontSize: 13, color: C.destructive },
-  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  hint: { fontFamily: F.regular, fontSize: 12, color: C.mutedForeground, textAlign: 'center' },
+  input: { backgroundColor: C.white, borderRadius: 12, borderColor: '#d9dce3' },
+  row: { flexDirection: 'row', gap: 10 },
+  hint: { fontFamily: F.regular, fontSize: 12, color: C.mutedForeground, textAlign: 'center', lineHeight: 17 },
 });

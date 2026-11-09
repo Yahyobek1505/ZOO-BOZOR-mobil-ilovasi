@@ -5,6 +5,7 @@ import { Image } from 'expo-image';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { C, F } from '@/constants/colors';
 import { categoryLabel, formatPrice, mapsUrl, timeAgo } from '@/constants/data';
+import { displayPhone, phoneHref } from '@/constants/input';
 import { useApp } from '@/context/AppContext';
 import { Button, EmptyState, ScreenHeader, go, src, useBottomInset, useTopInset } from '@/components/ui';
 
@@ -34,11 +35,12 @@ export default function ListingDetail() {
     Share.share({ message: `${item.title} — ${formatPrice(item.price)} soʻm, ${item.city}. ZOO-BOZOR ilovasida.` }).catch(() => {});
 
   const call = () => {
-    if (!item.phone) {
-      Alert.alert('Raqam mavjud emas', 'Bu namuna katalogdagi eʼlon, sotuvchining telefon raqami yoʻq.');
+    const uri = phoneHref(item.phone);
+    if (!uri) {
+      Alert.alert('Raqam mavjud emas', item.sample ? 'Bu namuna katalogdagi eʼlon, sotuvchining telefon raqami yoʻq.' : 'Sotuvchi bu eʼlon uchun toʻliq telefon raqamini kiritmagan.');
       return;
     }
-    Linking.openURL(`tel:${item.phone.replace(/\s/g, '')}`).catch(() => Alert.alert('Xatolik', 'Qoʻngʻiroq qilib boʻlmadi.'));
+    Linking.openURL(uri).catch(() => Alert.alert('Qoʻngʻiroq oynasi ochilmadi', 'Qurilmada qoʻngʻiroq ilovasi borligini tekshiring.'));
   };
 
   const openMap = () =>
@@ -59,10 +61,12 @@ export default function ListingDetail() {
 
   const info: { icon: keyof typeof Feather.glyphMap; v: string }[] = [
     { icon: 'tag', v: item.breed || categoryLabel(item.category) },
-    { icon: 'user', v: item.gender === 'erkak' ? 'Erkak' : item.gender === 'urgochi' ? 'Urgʻochi' : 'Koʻrsatilmagan' },
+    { icon: 'user', v: item.gender === 'erkak' ? 'Erkak' : item.gender === 'urgochi' ? 'Urgʻochi' : item.gender === 'aralash' ? 'Aralash' : 'Koʻrsatilmagan' },
     { icon: 'calendar', v: item.age || '—' },
     { icon: 'activity', v: item.weight || '—' },
     { icon: 'droplet', v: item.color || '—' },
+    ...(item.count ? [{ icon: 'hash' as const, v: `${item.count} dona` }] : []),
+    ...(item.documents ? [{ icon: 'file-text' as const, v: item.documents }] : []),
   ];
 
   return (
@@ -177,6 +181,15 @@ export default function ListingDetail() {
               </View>
             ))}
           </View>
+
+          <Pressable onPress={call} accessibilityRole="button" accessibilityLabel={`Telefon: ${displayPhone(item.phone) || 'Raqam kiritilmagan'}`} testID="seller-phone" style={[st.box, { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 10 }]}>
+            <Feather name="phone" size={22} color={C.navy} />
+            <View style={{ flex: 1, gap: 4 }}>
+              <Text style={st.muted}>Telefon</Text>
+              <Text style={st.seller}>{displayPhone(item.phone) || (item.sample ? 'Namuna eʼlon — raqam yoʻq' : 'Raqam kiritilmagan')}</Text>
+            </View>
+            <Feather name="phone-call" size={20} color={C.navy} />
+          </Pressable>
 
           <Text style={st.h}>
             <Feather name="file-text" size={16} color={C.navy} /> Hayvon haqida tavsif

@@ -46,7 +46,8 @@
         {
           "locationWhenInUsePermission": "ZOO-BOZOR yaqin atrofdagi eʼlonlarni koʻrsatish uchun joylashuvdan foydalanadi."
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,
