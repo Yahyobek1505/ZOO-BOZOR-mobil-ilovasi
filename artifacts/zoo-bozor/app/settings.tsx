@@ -1,26 +1,24 @@
 import React from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/LocalizedText';
+import { Alert } from '@/components/AppAlert';
 import { Feather } from '@expo/vector-icons';
 import { C, F } from '@/constants/colors';
-import { Prefs, useApp } from '@/context/AppContext';
+import { useApp } from '@/context/AppContext';
+import { APP_LANGUAGES } from '@/constants/translations';
+import { useLocale } from '@/context/LocaleContext';
 import { Button, ScreenHeader, go, useBottomInset } from '@/components/ui';
 import { ToggleRow, fieldStyles } from '@/components/Field';
 
-const LANGS: { id: Prefs['language']; label: string; ready: boolean }[] = [
-  { id: 'uz', label: 'Oʻzbekcha (lotin)', ready: true },
-  { id: 'uzc', label: 'Ўзбекча (кирилл)', ready: false },
-  { id: 'ru', label: 'Русский', ready: false },
-];
-
 export default function Settings() {
   const { prefs, setPrefs, resetAll } = useApp();
+  const { language, setLanguage, t } = useLocale();
   const bottom = useBottomInset();
 
   const reset = () =>
-    Alert.alert('Qurilmadagi maʼlumotlarni tozalash', 'Shu hisobning qurilmadagi eski eʼlonlari, profili, savati, saqlanganlari va xabar qoralamalari oʻchiriladi. Serverdagi ommaviy eʼlonlar oʻchirilmaydi; ularni «Mening eʼlonlarim» orqali alohida oʻchiring.', [
-      { text: 'Bekor qilish', style: 'cancel' },
-      { text: 'Tozalash', style: 'destructive', onPress: resetAll },
+    Alert.alert(t('Qurilmadagi maʼlumotlarni tozalash'), t('Shu hisobning qurilmadagi eski eʼlonlari, profili, savati, saqlanganlari va xabar qoralamalari oʻchiriladi. Serverdagi ommaviy eʼlonlar oʻchirilmaydi; ularni «Mening eʼlonlarim» orqali alohida oʻchiring.'), [
+      { text: t('Bekor qilish'), style: 'cancel' },
+      { text: t('Tozalash'), style: 'destructive', onPress: resetAll },
     ]);
 
   return (
@@ -29,16 +27,20 @@ export default function Settings() {
       <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: bottom + 24 }}>
         <View style={fieldStyles.group}>
           <Text style={fieldStyles.groupTitle}>Ilova tili</Text>
-          {LANGS.map((l) => (
+          {APP_LANGUAGES.map((l) => (
             <Pressable
               key={l.id}
-              onPress={() => (l.ready ? setPrefs({ language: l.id }) : Alert.alert(l.label, 'Bu til uchun tarjima hali tayyor emas. Hozircha ilova oʻzbek tilida (lotin) ishlaydi.'))}
+              onPress={() => { setLanguage(l.id); setPrefs({ language: l.id }); }}
               style={st.lang}
               testID={`lang-${l.id}`}
+              accessibilityRole="button"
+              accessibilityState={{ selected: language === l.id }}
             >
-              <Text style={[st.langTxt, !l.ready && { color: C.mutedForeground }]}>{l.label}</Text>
-              {!l.ready ? <Text style={st.soon}>Tez kunda</Text> : null}
-              <Feather name={prefs.language === l.id ? 'check-circle' : 'circle'} size={20} color={prefs.language === l.id ? C.navy : C.border} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={st.langTxt}>{l.name}</Text>
+                <Text style={st.greeting}>{l.greeting}</Text>
+              </View>
+              <Feather name={language === l.id ? 'check-circle' : 'circle'} size={20} color={language === l.id ? C.navy : C.border} />
             </Pressable>
           ))}
         </View>
@@ -80,6 +82,6 @@ export default function Settings() {
 const st = StyleSheet.create({
   lang: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 },
   langTxt: { flex: 1, fontFamily: F.dSemibold, fontSize: 15, color: C.navy },
-  soon: { fontFamily: F.semibold, fontSize: 11, color: C.navy, backgroundColor: C.secondary, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, overflow: 'hidden' },
+  greeting: { fontFamily: F.medium, fontSize: 12, color: C.mutedForeground },
   p: { fontFamily: F.regular, fontSize: 13, color: C.navy, lineHeight: 20 },
 });

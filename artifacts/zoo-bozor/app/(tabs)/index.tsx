@@ -6,11 +6,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { C, F } from '@/constants/colors';
 import { CATEGORIES, IMAGES, STORIES } from '@/constants/data';
 import { useApp } from '@/context/AppContext';
+import { useLocale } from '@/context/LocaleContext';
+import Welcome from '@/app/welcome';
 import { BrandHeader } from '@/components/BrandHeader';
 import { ListingCard, SaleCard, SearchBar, SectionTitle, go } from '@/components/ui';
 
 export default function HomeScreen() {
-  const { allListings } = useApp();
+  const { allListings, ready: appReady, prefs } = useApp();
+  const { ready: localeReady, onboardingComplete } = useLocale();
   const { width } = useWindowDimensions();
   const [q, setQ] = useState('');
   const [bannerIdx, setBannerIdx] = useState(0);
@@ -34,6 +37,10 @@ export default function HomeScreen() {
       ))}
     </View>
   );
+
+  if (!localeReady || !appReady || (!onboardingComplete && !prefs.welcomed)) {
+    return <Welcome />;
+  }
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.surface }} contentContainerStyle={{ paddingBottom: 170 }} showsVerticalScrollIndicator={false}>

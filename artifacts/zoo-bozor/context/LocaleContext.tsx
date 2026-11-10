@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text as NativeText, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { APP_LANGUAGES, translate, type AppLanguage } from "@/constants/translations";
@@ -20,6 +20,7 @@ function isLanguage(value: unknown): value is AppLanguage {
 
 export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const [language, updateLanguage] = useState<AppLanguage>("uz");
+  const languageRef = useRef<AppLanguage>("uz");
   const [onboardingComplete, updateOnboarding] = useState(false);
   const [ready, setReady] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -34,10 +35,16 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       AsyncStorage.getItem("zoo-bozor/state/v1"),
     ]).then(([savedLanguage, savedOnboarding, oldGuestState]) => {
       if (!active) return;
-      if (isLanguage(savedLanguage)) updateLanguage(savedLanguage);
+      if (isLanguage(savedLanguage)) {
+        languageRef.current = savedLanguage;
+        updateLanguage(savedLanguage);
+      }
       else if (oldGuestState) {
         const prefs = (JSON.parse(oldGuestState) as { prefs?: { language?: string; welcomed?: boolean } }).prefs;
-        if (prefs?.language === "ru" || prefs?.language === "en") updateLanguage(prefs.language);
+        if (prefs?.language === "ru" || prefs?.language === "en") {
+          languageRef.current = prefs.language;
+          updateLanguage(prefs.language);
+        }
         if (prefs?.welcomed === true) updateOnboarding(true);
       }
       if (savedOnboarding === "complete") updateOnboarding(true);
@@ -49,11 +56,18 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   }, [attempt]);
 
   const setLanguage = useCallback((next: AppLanguage) => {
-    const previous = language;
+    const previous = languageRef.current;
+    languageRef.current = next;
     updateLanguage(next);
     void AsyncStorage.setItem(LANGUAGE_KEY, next).catch(() => {
-      updateLanguage(previous);
-      Alert.alert("Til tanlovi saqlanmadi", "Xotira joyini tekshirib, tilni qayta tanlang.");
+      if (languageRef.current === next) {
+        languageRef.current = previous;
+        updateLanguage(previous);
+      }
+      Alert.alert(
+        translate("Til tanlovi saqlanmadi", next),
+        translate("Xotira joyini tekshirib, tilni qayta tanlang.", next),
+      );
     });
   }, [language]);
 
@@ -61,9 +75,12 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     updateOnboarding(true);
     void AsyncStorage.setItem(ONBOARDING_KEY, "complete").catch(() => {
       updateOnboarding(false);
-      Alert.alert("Sozlama saqlanmadi", "Ilova tanishtiruvini saqlab boʻlmadi. Qayta urinib koʻring.");
+      Alert.alert(
+        translate("Sozlama saqlanmadi", language),
+        translate("Ilova tanishtiruvini saqlab boʻlmadi. Qayta urinib koʻring.", language),
+      );
     });
-  }, []);
+  }, [language]);
 
   const value = useMemo(() => ({
     language, t: (source: string) => translate(source, language),

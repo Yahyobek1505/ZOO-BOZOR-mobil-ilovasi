@@ -16,9 +16,12 @@ function localizeChildren(children: React.ReactNode, t: (value: string) => strin
 }
 
 /** Translates the app's shared, visible strings while preserving rich Text children. */
-export function Text({ children, ...props }: TextProps) {
+export function Text({ children, accessibilityLabel, ...props }: TextProps) {
   const { t } = useLocale();
-  return <NativeText {...props}>{localizeChildren(children, t)}</NativeText>;
+  return <NativeText
+    {...props}
+    accessibilityLabel={accessibilityLabel ? t(accessibilityLabel) : undefined}
+  >{localizeChildren(children, t)}</NativeText>;
 }
 
 /** Keeps text-entry labels and placeholders in the selected language too. */

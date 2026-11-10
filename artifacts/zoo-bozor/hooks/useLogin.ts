@@ -4,6 +4,7 @@ import { createUserWithEmailAndPassword, reload, sendEmailVerification, sendPass
 import { firebaseAuth } from '@/lib/firebase';
 import { startGoogleSignIn } from '@/lib/google-sign-in';
 import { useSession } from '@/context/AuthContext';
+import { useLocale } from '@/context/LocaleContext';
 
 export type LoginMode = 'signin' | 'signup' | 'verify' | 'forgot';
 export function authErrorText(error: unknown): string {
@@ -29,6 +30,7 @@ export function authErrorText(error: unknown): string {
 
 export function useLogin() {
   const session = useSession();
+  const { t } = useLocale();
   const [mode, setMode] = useState<LoginMode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -41,10 +43,14 @@ export function useLogin() {
   }, [session.user, session.isSignedIn]);
 
   const switchMode = (next: LoginMode) => { setMode(next); setError(''); setInfo(''); };
-  const run = async (operation: () => Promise<unknown>) => {
+  const run = async (operation: () => Promise<unknown>, reportGoogleError = false) => {
     if (loading) return;
     setLoading(true); setError(''); setInfo('');
-    try { await operation(); } catch (cause) { setError(authErrorText(cause)); } finally { setLoading(false); }
+    try { await operation(); } catch (cause) {
+      const message = authErrorText(cause);
+      setError(message);
+      if (reportGoogleError) session.setGoogleFlowError(message);
+    } finally { setLoading(false); }
   };
   const validate = (signup = false) => {
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) { setError('Elektron pochta manzilini toʻgʻri kiriting'); return false; }
@@ -67,7 +73,7 @@ export function useLogin() {
       const result = await createUserWithEmailAndPassword(firebaseAuth, email.trim(), password);
       setMode('verify');
       await sendEmailVerification(result.user);
-      setInfo(`${email.trim()} manziliga tasdiqlash havolasi yuborildi. Havolani ochib, ilovaga qayting.`);
+      setInfo(`${t('Tasdiqlash havolasi yuborildi:')} ${email.trim()}. ${t('Havolani ochib, ilovaga qayting.')}`);
     });
   };
   const doVerify = () => void run(async () => {
@@ -90,7 +96,10 @@ export function useLogin() {
       setInfo('Bu email bilan hisob mavjud boʻlsa, parolni tiklash havolasi yuborildi. Pochtangizni tekshiring.');
     });
   };
-  const doGoogle = () => { void run(() => startGoogleSignIn()); };
+  const doGoogle = () => {
+    session.setGoogleFlowError('');
+    void run(() => startGoogleSignIn(), true);
+  };
   const changeAccount = () => { void run(async () => { await session.signOut(); switchMode('signin'); }); };
   return { ...session, mode, email, password, error, info, loading, setEmail, setPassword, switchMode, doSignIn, doSignUp, doVerify, resend, doForgot, doGoogle, changeAccount };
 }

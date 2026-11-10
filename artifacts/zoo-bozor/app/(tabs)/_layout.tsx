@@ -5,15 +5,17 @@ import { BlurView } from 'expo-blur';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
 import { Tabs } from 'expo-router';
-import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { NativeTabs } from 'expo-router/native-tabs';
 import type { BottomTabBarProps } from 'expo-router/tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, F } from '@/constants/colors';
 import { BrandMark, go } from '@/components/ui';
+import { useLocale } from '@/context/LocaleContext';
 
 function PostCta({ style }: { style?: object }) {
+  const { t } = useLocale();
   return (
-    <Pressable onPress={() => go('/listing/edit')} accessibilityRole="button" accessibilityLabel="Eʼlon berish" testID="add-listing" style={({ pressed }) => [st.cta, style, pressed && { transform: [{ scale: 0.96 }] }]}>
+    <Pressable onPress={() => go('/listing/edit')} accessibilityRole="button" accessibilityLabel={t('Eʼlon berish')} testID="add-listing" style={({ pressed }) => [st.cta, style, pressed && { transform: [{ scale: 0.96 }] }]}>
       <Ionicons name="megaphone" size={19} color={C.white} />
       <Text style={st.ctaText}>Eʼlon berish</Text>
     </Pressable>
@@ -22,28 +24,29 @@ function PostCta({ style }: { style?: object }) {
 
 function NativeTabLayout() {
   const insets = useSafeAreaInsets();
+  const { t } = useLocale();
   return (
     <View style={{ flex: 1 }}>
     <NativeTabs>
       <NativeTabs.Trigger name="market">
         <NativeTabs.Trigger.Icon sf={{ default: 'bag', selected: 'bag.fill' }} />
-        <NativeTabs.Trigger.Label>Market</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t('Market')}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="map">
         <NativeTabs.Trigger.Icon sf={{ default: 'map', selected: 'map.fill' }} />
-        <NativeTabs.Trigger.Label>Xarita</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t('Xarita')}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Icon sf={{ default: 'pawprint', selected: 'pawprint.fill' }} />
-        <NativeTabs.Trigger.Label>Bosh sahifa</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t('Bosh sahifa')}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="listings">
         <NativeTabs.Trigger.Icon sf={{ default: 'list.bullet.rectangle', selected: 'list.bullet.rectangle.fill' }} />
-        <NativeTabs.Trigger.Label>Eʼlonlar</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t('Eʼlonlar')}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
         <NativeTabs.Trigger.Icon sf={{ default: 'person', selected: 'person.fill' }} />
-        <NativeTabs.Trigger.Label>Profil</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t('Profil')}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
     </NativeTabs>
       <View pointerEvents="box-none" style={[st.nativeCta, { bottom: insets.bottom + 62 }]}>
@@ -69,6 +72,7 @@ const LABELS: Record<string, string> = {
 
 function BrandTabBar({ state, navigateToTab }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const { t } = useLocale();
   const bottom = Platform.OS === 'web' ? 34 : Math.max(insets.bottom, 10);
   return (
     <View pointerEvents="box-none" style={[st.outer, { paddingBottom: bottom }]}>
@@ -87,7 +91,7 @@ function BrandTabBar({ state, navigateToTab }: BottomTabBarProps) {
           };
           if (route.name === 'index') {
             return (
-              <Pressable key={route.key} onPress={onPress} style={st.item} accessibilityLabel={LABELS.index} testID="tab-index">
+              <Pressable key={route.key} onPress={onPress} style={st.item} accessibilityLabel={t(LABELS.index)} testID="tab-index">
                 <View style={[st.home, focused && { backgroundColor: C.lime }]}>
                   <BrandMark size={24} color={focused ? C.navy : C.white} />
                 </View>
@@ -95,7 +99,7 @@ function BrandTabBar({ state, navigateToTab }: BottomTabBarProps) {
             );
           }
           return (
-            <Pressable key={route.key} onPress={onPress} style={st.item} accessibilityLabel={LABELS[route.name]} testID={`tab-${route.name}`}>
+            <Pressable key={route.key} onPress={onPress} style={st.item} accessibilityLabel={t(LABELS[route.name])} testID={`tab-${route.name}`}>
               <Feather name={ICONS[route.name] ?? 'circle'} size={23} color={focused ? C.lime : C.white} />
               <View style={[st.dot, focused && { backgroundColor: C.lime }]} />
             </Pressable>
@@ -107,13 +111,14 @@ function BrandTabBar({ state, navigateToTab }: BottomTabBarProps) {
 }
 
 function ClassicTabLayout() {
+  const { t } = useLocale();
   return (
     <Tabs screenOptions={{ headerShown: false, lazy: false, freezeOnBlur: true, sceneStyle: { backgroundColor: C.surface } }} tabBar={(p) => <BrandTabBar {...p} />}>
-      <Tabs.Screen name="market" options={{ title: 'Market' }} />
-      <Tabs.Screen name="map" options={{ title: 'Xarita' }} />
-      <Tabs.Screen name="index" options={{ title: 'Bosh sahifa' }} />
-      <Tabs.Screen name="listings" options={{ title: 'Eʼlonlar' }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profil' }} />
+      <Tabs.Screen name="market" options={{ title: t('Market') }} />
+      <Tabs.Screen name="map" options={{ title: t('Xarita') }} />
+      <Tabs.Screen name="index" options={{ title: t('Bosh sahifa') }} />
+      <Tabs.Screen name="listings" options={{ title: t('Eʼlonlar') }} />
+      <Tabs.Screen name="profile" options={{ title: t('Profil') }} />
     </Tabs>
   );
 }

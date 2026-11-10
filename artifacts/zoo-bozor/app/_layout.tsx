@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ActivityIndicator, Alert, Pressable, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/LocalizedText';
+import Animated, { cancelAnimation, Easing, FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { AuthProvider, useSession } from '@/context/AuthContext';
 import { LocaleProvider } from '@/context/LocaleContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -15,11 +16,16 @@ import {
   PlusJakartaSans_700Bold,
   PlusJakartaSans_800ExtraBold,
 } from '@expo-google-fonts/plus-jakarta-sans';
-import { Stack, usePathname } from 'expo-router';
+import { Stack, router, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { AppProvider } from '@/context/AppContext';
 import { C } from '@/constants/colors';
 import { AppAlertHost } from '@/components/AppAlert';
+import { useApp } from '@/context/AppContext';
+import { useLocale } from '@/context/LocaleContext';
+import { APP_LANGUAGES } from '@/constants/translations';
+import { F } from '@/constants/colors';
+import Welcome from '@/app/welcome';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -28,10 +34,17 @@ const queryClient = new QueryClient();
 function AccountScopedApp({ children }: { children: React.ReactNode }) {
   const { accountId, user, loading, error, retry, signOut, isSignedIn } = useSession();
   const bridge = usePathname() === '/google-auth';
+  const pathname = usePathname();
+  const { onboardingComplete } = useLocale();
   useEffect(() => {
     queryClient.clear();
   }, [accountId]);
-  if (!bridge && (loading || error)) return (
+  if (!bridge && loading) {
+    const isInitialHome = pathname === '/' || pathname === '/(tabs)' || pathname === '/(tabs)/index';
+    if (isInitialHome && !onboardingComplete) return <Welcome />;
+    return <BootSplash />;
+  }
+  if (!bridge && error) return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 20, backgroundColor: C.white }}>
       {loading ? <ActivityIndicator color={C.navy} /> : <>
         <Text style={{ textAlign: 'center', color: C.navy }}>{error}</Text>
@@ -56,6 +69,19 @@ function AccountScopedApp({ children }: { children: React.ReactNode }) {
 }
 
 function RootLayoutNav() {
+  const { prefs, ready } = useApp();
+  const { ready: localeReady, onboardingComplete, completeOnboarding } = useLocale();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (!ready || !localeReady) return;
+    if (prefs.welcomed && !onboardingComplete) completeOnboarding();
+    if (!prefs.welcomed && !onboardingComplete && pathname !== '/welcome' && pathname !== '/login'
+      && pathname !== '/google-auth' && pathname !== '/sso-callback') {
+      router.replace('/welcome');
+    }
+  }, [ready, localeReady, prefs.welcomed, onboardingComplete, completeOnboarding, pathname]);
+
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.surface } }}>
       <Stack.Screen name="(tabs)" />
@@ -71,6 +97,37 @@ function RootLayoutNav() {
   );
 }
 
+function BootSplash() {
+  const { language } = useLocale();
+  const turn = useSharedValue(0);
+  const logoStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${turn.value}deg` }] }));
+  const greeting = APP_LANGUAGES.find((item) => item.id === language)?.greeting ?? 'Salom';
+
+  useEffect(() => {
+    turn.value = withRepeat(withTiming(360, { duration: 1050, easing: Easing.linear }), -1, false);
+    return () => cancelAnimation(turn);
+  }, [turn]);
+
+  return (
+    <View style={bootStyles.page}>
+      <Animated.View>
+        <Animated.View style={logoStyle}>
+          <Image source={require('@/assets/images/icon.png')} style={bootStyles.logo} accessibilityLabel="ZOO-BOZOR" />
+        </Animated.View>
+      </Animated.View>
+      <Animated.Text entering={FadeInDown.delay(760).duration(440)} style={bootStyles.brand}>ZOO BOZOR</Animated.Text>
+      <Animated.Text entering={FadeInDown.delay(920).duration(440)} style={bootStyles.greeting}>{greeting}</Animated.Text>
+    </View>
+  );
+}
+
+const bootStyles = StyleSheet.create({
+  page: { flex: 1, minHeight: '100%', backgroundColor: '#ffffff', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  logo: { width: 104, height: 104, borderRadius: 28 },
+  brand: { fontFamily: F.dExtra, fontSize: 27, color: '#080D28', letterSpacing: 0.8 },
+  greeting: { fontFamily: F.medium, fontSize: 16, color: '#626a7b' },
+});
+
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
@@ -82,31 +139,37 @@ export default function RootLayout() {
     PlusJakartaSans_800ExtraBold,
   });
 
-  useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
+  useEffect(() => { void SplashScreen.hideAsync(); }, []);
 
-  if (!fontsLoaded && !fontError) return null;
+  if (!fontsLoaded && !fontError) {
+    return (
+      <SafeAreaProvider>
+        <LocaleProvider>
+          <BootSplash />
+        </LocaleProvider>
+      </SafeAreaProvider>
+    );
+  }
 
   return (
     <SafeAreaProvider>
+      <LocaleProvider>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-          <AccountScopedApp>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <KeyboardProvider>
-                <StatusBar style="auto" />
-                <RootLayoutNav />
-              </KeyboardProvider>
-            </GestureHandlerRootView>
-          </AccountScopedApp>
-          <AppAlertHost />
+            <AccountScopedApp>
+              <GestureHandlerRootView style={{ flex: 1 }}>
+                <KeyboardProvider>
+                  <StatusBar style="auto" />
+                  <RootLayoutNav />
+                </KeyboardProvider>
+              </GestureHandlerRootView>
+            </AccountScopedApp>
+            <AppAlertHost />
           </AuthProvider>
         </QueryClientProvider>
       </ErrorBoundary>
+      </LocaleProvider>
     </SafeAreaProvider>
   );
 }

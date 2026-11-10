@@ -14,6 +14,8 @@ type Session = {
   isSignedIn: boolean;
   loading: boolean;
   error: string;
+  googleFlowError: string;
+  setGoogleFlowError: (error: string) => void;
   retry: () => void;
   signOut: () => Promise<void>;
 };
@@ -24,6 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [accountId, setAccountId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [googleFlowError, setGoogleFlowError] = useState('');
   const generation = useRef(0);
   const resolved = useRef<{ uid: string; accountId: string } | null>(null);
 
@@ -66,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [resolve]);
 
   return <AuthContext.Provider value={{
-    user, accountId, loading, error,
+    user, accountId, loading, error, googleFlowError, setGoogleFlowError,
     isSignedIn: !!user?.emailVerified && !!accountId,
     retry: () => { void resolve(firebaseAuth.currentUser); },
     signOut: () => firebaseSignOut(firebaseAuth),
