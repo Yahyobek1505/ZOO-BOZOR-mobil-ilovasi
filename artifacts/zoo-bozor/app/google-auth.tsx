@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Platform, Text, View } from 'react-native';
+import { Platform, View } from 'react-native';
+import { Text } from '@/components/LocalizedText';
 import { useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';
 import { GoogleAuthProvider } from 'firebase/auth';

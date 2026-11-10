@@ -1,5 +1,6 @@
 import React from 'react';
-import { Platform, Pressable, StyleSheet, Text, TextInput, View, ViewStyle, StyleProp } from 'react-native';
+import { Platform, Pressable, StyleSheet, View, ViewStyle, StyleProp } from 'react-native';
+import { Text, TextInput } from '@/components/LocalizedText';
 import { Image } from 'expo-image';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '@/components/LocalizedText';
 import { Alert } from '@/components/AppAlert';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';

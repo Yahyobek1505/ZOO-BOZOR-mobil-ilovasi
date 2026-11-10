@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Switch, Text, TextInput, TextInputProps, View } from 'react-native';
+import { StyleSheet, Switch, View, type TextInputProps } from 'react-native';
+import { Text, TextInput } from '@/components/LocalizedText';
 import { C, F } from '@/constants/colors';
 import { decimalOnly, digitsOnly, formatBirthInput } from '@/constants/input';
 

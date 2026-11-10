@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
+import { Text } from '@/components/LocalizedText';
 import { Alert } from '@/components/AppAlert';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Listing, SAMPLE_LISTINGS } from '@/constants/data';
@@ -26,7 +27,7 @@ export type Profile = {
 export type DraftMessage = { id: string; text: string; at: number };
 export type Conversation = { listingId: string; messages: DraftMessage[] };
 export type CartItem = { productId: string; qty: number };
-export type Prefs = { language: 'uz' | 'uzc' | 'ru'; notifications: boolean; welcomed: boolean };
+export type Prefs = { language: 'uz' | 'ru' | 'en'; notifications: boolean; welcomed: boolean };
 
 type Stored = {
   favorites: string[];

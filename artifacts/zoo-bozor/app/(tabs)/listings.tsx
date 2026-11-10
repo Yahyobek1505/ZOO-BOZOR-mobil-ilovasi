@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { FlatList, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Text } from '@/components/LocalizedText';
 import { useLocalSearchParams } from 'expo-router';
 import { C, F } from '@/constants/colors';
 import { CATEGORIES } from '@/constants/data';

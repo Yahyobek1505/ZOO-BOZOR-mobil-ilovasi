@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/LocalizedText';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import { C, F } from '@/constants/colors';

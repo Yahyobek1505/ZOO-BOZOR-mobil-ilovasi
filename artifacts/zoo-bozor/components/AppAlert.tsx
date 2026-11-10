@@ -1,5 +1,6 @@
 import React, { useSyncExternalStore } from 'react';
-import { Alert as NativeAlert, type AlertButton, type AlertOptions, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert as NativeAlert, type AlertButton, type AlertOptions, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/LocalizedText';
 import { C, F } from '@/constants/colors';
 
 type Dialog = { title: string; message?: string; buttons: AlertButton[]; options?: AlertOptions };

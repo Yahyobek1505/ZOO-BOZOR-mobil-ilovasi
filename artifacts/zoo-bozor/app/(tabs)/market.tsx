@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Text } from '@/components/LocalizedText';
 import { Image } from 'expo-image';
 import { C, F } from '@/constants/colors';
 import { IMAGES, PRODUCTS, PRODUCT_CATEGORIES } from '@/constants/data';

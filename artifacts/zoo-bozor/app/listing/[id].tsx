@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Linking, Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Linking, Pressable, ScrollView, Share, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Text } from '@/components/LocalizedText';
 import { Alert } from '@/components/AppAlert';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';

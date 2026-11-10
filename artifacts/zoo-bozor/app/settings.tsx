@@ -1,5 +1,6 @@
 import React from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/LocalizedText';
 import { Feather } from '@expo/vector-icons';
 import { C, F } from '@/constants/colors';
 import { Prefs, useApp } from '@/context/AppContext';

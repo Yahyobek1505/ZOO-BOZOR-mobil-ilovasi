@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/LocalizedText';
 import { WebView } from 'react-native-webview';
 import { C, F } from '@/constants/colors';
 import { ListingMapProps, mapDocument } from './map-document';

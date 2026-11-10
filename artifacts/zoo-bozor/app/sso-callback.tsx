@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { ActivityIndicator, Platform, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, View } from 'react-native';
+import { Text } from '@/components/LocalizedText';
 import { router } from 'expo-router';
 import { useSession } from '@/context/AuthContext';
 import { C, F } from '@/constants/colors';

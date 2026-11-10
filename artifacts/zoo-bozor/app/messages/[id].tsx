@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Alert, FlatList, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '@/components/LocalizedText';
 import { useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';

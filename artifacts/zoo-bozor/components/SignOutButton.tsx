@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/LocalizedText';
 import { useSession } from '@/context/AuthContext';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';

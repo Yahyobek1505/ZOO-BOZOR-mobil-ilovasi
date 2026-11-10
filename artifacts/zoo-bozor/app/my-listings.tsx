@@ -1,5 +1,6 @@
 import React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '@/components/LocalizedText';
 import { Alert } from '@/components/AppAlert';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
