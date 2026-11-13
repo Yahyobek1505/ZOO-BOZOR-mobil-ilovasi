@@ -12,6 +12,8 @@ const artifactDir = path.dirname(fileURLToPath(import.meta.url));
 
 // `node build.mjs --netlify` bundles the Netlify Function (src/netlify.ts) into one file in
 // dist-netlify/. Production logging only there: no pino-pretty worker threads in a function.
+// CommonJS (.cjs): Netlify converts ESM functions to CommonJS itself, which leaves
+// `import.meta.url` undefined and crashes the function on load.
 const forNetlify = process.argv.includes("--netlify");
 
 async function buildAll() {
@@ -24,9 +26,9 @@ async function buildAll() {
     ...(forNetlify ? { define: { "process.env.NODE_ENV": '"production"' } } : {}),
     platform: "node",
     bundle: true,
-    format: "esm",
+    format: forNetlify ? "cjs" : "esm",
     outdir: distDir,
-    outExtension: { ".js": ".mjs" },
+    outExtension: { ".js": forNetlify ? ".cjs" : ".mjs" },
     logLevel: "info",
     // Some packages may not be bundleable, so we externalize them, we can add more here as needed.
     // Some of the packages below may not be imported or installed, but we're adding them in case they are in the future.
@@ -113,7 +115,7 @@ async function buildAll() {
       esbuildPluginPino({ transports: ["pino-pretty"] })
     ],
     // Make sure packages that are cjs only (e.g. express) but are bundled continue to work in our esm output file
-    banner: {
+    banner: forNetlify ? {} : {
       js: `import { createRequire as __bannerCrReq } from 'node:module';
 import __bannerPath from 'node:path';
 import __bannerUrl from 'node:url';
