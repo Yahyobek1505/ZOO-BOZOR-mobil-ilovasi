@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
+import { Alert } from '@/components/AppAlert';
 import { Text } from '@/components/LocalizedText';
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { C, F } from '@/constants/colors';
+import { F } from '@/constants/colors';
+import { makeStyles, useTheme } from '@/context/ThemeContext';
 import { CITIES } from '@/constants/data';
 import { digitsOnly, normalizePhone, validBirthDate } from '@/constants/input';
 import { Profile, useApp } from '@/context/AppContext';
@@ -15,6 +17,8 @@ import { Field } from '@/components/Field';
 import { CurvedHeader, HeaderAction, Label, PillButton, Select, Tile } from '@/components/FormKit';
 
 export default function ProfileEdit() {
+  const { C } = useTheme();
+  const st = useSt();
   const { profile, updateProfile } = useApp();
   const bottom = useBottomInset();
   const [p, setP] = useState<Profile>({ ...profile, phone: digitsOnly(profile.phone).slice(0, 12) });
@@ -52,13 +56,13 @@ export default function ProfileEdit() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.white }}>
+    <View style={{ flex: 1, backgroundColor: C.dark ? C.surface : C.card }}>
       <CurvedHeader title="Profilni tahrirlash" onBack={() => router.back()} right={<HeaderAction label="Saqlash" onPress={save} testID="save-profile-header" />} />
       <KeyboardAwareScrollViewCompat contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: bottom + 40 }} bottomOffset={40}>
         <View style={{ alignItems: 'center', gap: 8 }}>
           <Pressable onPress={pickAvatar} style={st.avatar} testID="pick-avatar" accessibilityRole="button" accessibilityLabel="Profil rasmini tanlash">
             {p.avatar ? <Image source={{ uri: p.avatar }} style={{ width: '100%', height: '100%', borderRadius: 52 }} /> : <Feather name="user" size={42} color={C.lime} />}
-            <View style={st.cam}><Feather name="camera" size={15} color={C.navy} /></View>
+            <View style={st.cam}><Feather name="camera" size={15} color={C.ink} /></View>
           </Pressable>
           {p.avatar ? (
             <Pressable onPress={() => set('avatar', '')} testID="remove-avatar" accessibilityRole="button">
@@ -67,7 +71,7 @@ export default function ProfileEdit() {
           ) : null}
         </View>
         <Field label="Ism-familiya" value={p.name} onChangeText={(v) => set('name', v)} placeholder="Ismingiz" error={errors.name} testID="name" style={st.input} />
-        <Field label="Telefon raqami" value={p.phone} onChangeText={(v) => set('phone', v)} keyboardType="phone-pad" placeholder="998901234567" maxLength={12} error={errors.phone} testID="phone" style={st.input} />
+        <Field label="Telefon raqami" value={p.phone} onChangeText={(v) => set('phone', digitsOnly(v).slice(0, 12))} keyboardType="phone-pad" placeholder="998901234567" error={errors.phone} testID="phone" style={st.input} />
         <Field label="Elektron pochta" value={p.email} onChangeText={(v) => set('email', v)} keyboardType="email-address" autoCapitalize="none" placeholder="pochta@misol.uz" error={errors.email} testID="email" style={st.input} />
         <Field label="Tugʻilgan sana" value={p.birth} onChangeText={(v) => set('birth', v)} inputKind="date" keyboardType="number-pad" maxLength={10} placeholder="15.11.1994" error={errors.birth} testID="birth" style={st.input} />
         <Select label="Hudud" value={p.region} onChange={(v) => set('region', v)} options={CITIES.map((c) => ({ value: c.name, label: c.name }))} testID="region" />
@@ -86,11 +90,11 @@ export default function ProfileEdit() {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((C) => ({
   avatar: { width: 104, height: 104, borderRadius: 52, backgroundColor: C.navy, alignItems: 'center', justifyContent: 'center' },
-  cam: { position: 'absolute', right: 0, bottom: 2, width: 32, height: 32, borderRadius: 16, backgroundColor: C.lime, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: C.white },
+  cam: { position: 'absolute', right: 0, bottom: 2, width: 32, height: 32, borderRadius: 16, backgroundColor: C.lime, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: C.dark ? C.surface : C.card },
   link: { fontFamily: F.semibold, fontSize: 13, color: C.destructive },
-  input: { backgroundColor: C.white, borderRadius: 12, borderColor: '#d9dce3' },
+  input: { backgroundColor: C.card, borderRadius: 12, borderColor: C.dark ? C.border : '#d9dce3' },
   row: { flexDirection: 'row', gap: 10 },
   hint: { fontFamily: F.regular, fontSize: 12, color: C.mutedForeground, textAlign: 'center', lineHeight: 17 },
-});
+}));

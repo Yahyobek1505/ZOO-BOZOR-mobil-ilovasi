@@ -31,7 +31,8 @@ function visiblePhrases(source) {
 
 test('every static Uzbek UI string on app screens has Russian and English copy', () => {
   const phrases = [...visiblePhrases('app'), ...visiblePhrases('components')];
-  const unchangedData = new Set(['Britan Scottish Fold', 'Fold', 'Yunusobod', 'ZOO-BOZOR', 'soʻm']);
+  // Brand and payment-provider names are shown as-is in every language.
+  const unchangedData = new Set(['Britan Scottish Fold', 'Fold', 'Yunusobod', 'ZOO-BOZOR', 'soʻm', 'Click', 'Payme', 'Uzum Bank', 'Cats', 'Terranium', 'ZOO-BOZOR Market', '© OpenStreetMap']);
   const englishInterfaceCopy = new Set([
     'Something went wrong', 'Please reload the app to continue.',
     'Try Again', 'Error Details', 'View error details', 'Close error details',

@@ -1,7 +1,8 @@
 import React from 'react';
-import { StyleSheet, Switch, View, type TextInputProps } from 'react-native';
+import { Switch, View, type TextInputProps } from 'react-native';
 import { Text, TextInput } from '@/components/LocalizedText';
-import { C, F } from '@/constants/colors';
+import { F } from '@/constants/colors';
+import { makeStyles, useTheme } from '@/context/ThemeContext';
 import { decimalOnly, digitsOnly, formatBirthInput } from '@/constants/input';
 
 type FieldProps = TextInputProps & {
@@ -11,6 +12,8 @@ type FieldProps = TextInputProps & {
 };
 
 export function Field({ label, error, inputKind, ...props }: FieldProps) {
+  const { C } = useTheme();
+  const st = useSt();
   const kind = inputKind ?? (
     props.keyboardType === 'decimal-pad' ? 'decimal'
       : ['phone-pad', 'number-pad', 'numeric'].includes(props.keyboardType ?? '') ? 'digits' : 'text'
@@ -38,27 +41,30 @@ export function Field({ label, error, inputKind, ...props }: FieldProps) {
 }
 
 export function ToggleRow({ label, sub, value, onChange }: { label: string; sub?: string; value: boolean; onChange: (v: boolean) => void }) {
+  const { C } = useTheme();
+  const st = useSt();
   return (
     <View style={st.toggle}>
       <View style={{ flex: 1 }}>
         <Text style={st.toggleLabel}>{label}</Text>
         {sub ? <Text style={st.sub}>{sub}</Text> : null}
       </View>
-      <Switch value={value} onValueChange={onChange} trackColor={{ true: C.navy, false: C.border }} thumbColor={value ? C.lime : C.white} />
+      <Switch value={value} onValueChange={onChange} trackColor={{ true: C.dark ? C.success : C.navy, false: C.border }} thumbColor={value ? C.lime : C.white} />
     </View>
   );
 }
 
-export const fieldStyles = StyleSheet.create({
-  group: { backgroundColor: C.white, borderRadius: 20, padding: 14, gap: 14 },
-  groupTitle: { fontFamily: F.dBold, fontSize: 16, color: C.navy },
-});
+/** Settings-style card group; call inside the component: `const fieldStyles = useFieldStyles()`. */
+export const useFieldStyles = makeStyles((C) => ({
+  group: { backgroundColor: C.card, borderRadius: 20, padding: 14, gap: 14 },
+  groupTitle: { fontFamily: F.dBold, fontSize: 16, color: C.text },
+}));
 
-const st = StyleSheet.create({
+const useSt = makeStyles((C) => ({
   label: { fontFamily: F.semibold, fontSize: 12, color: C.mutedForeground },
-  input: { height: 48, borderRadius: 14, borderWidth: 1, borderColor: C.border, backgroundColor: C.surface, paddingHorizontal: 14, fontFamily: F.medium, fontSize: 15, color: C.navy },
+  input: { height: 48, borderRadius: 14, borderWidth: 1, borderColor: C.border, backgroundColor: C.surface, paddingHorizontal: 14, fontFamily: F.medium, fontSize: 15, color: C.text },
   err: { fontFamily: F.medium, fontSize: 12, color: C.destructive },
   toggle: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  toggleLabel: { fontFamily: F.dSemibold, fontSize: 14, color: C.navy },
+  toggleLabel: { fontFamily: F.dSemibold, fontSize: 14, color: C.text },
   sub: { fontFamily: F.regular, fontSize: 12, color: C.mutedForeground, marginTop: 2 },
-});
+}));

@@ -36,10 +36,15 @@ async function marketplaceAccount(claims: FirebaseClaims): Promise<string> {
 
   // Read-only legacy lookup, never copy a password or trust a client-supplied ID.
   // Keep these managed keys until old verified accounts have been linked.
-  if (!process.env.CLERK_SECRET_KEY) throw new AuthError(503, 'Oldingi hisoblarni bogʻlash sozlamasi topilmadi. Maʼlumotlaringiz oʻchirilmagan.');
-  const legacy = await clerkClient.users.getUserList({ emailAddress: [claims.email], limit: 2 });
-  const matches = legacy.data.filter((user) => user.emailAddresses.some((email) =>
-    email.emailAddress.toLowerCase() === claims.email.toLowerCase() && email.verification?.status === 'verified'));
+  // LEGACY_CLERK_LOOKUP=off is only for a fresh database that never had Clerk users;
+  // by default a missing key still blocks sign-up so legacy accounts cannot be split.
+  let matches: { id: string }[] = [];
+  if (process.env.LEGACY_CLERK_LOOKUP !== 'off') {
+    if (!process.env.CLERK_SECRET_KEY) throw new AuthError(503, 'Oldingi hisoblarni bogʻlash sozlamasi topilmadi. Maʼlumotlaringiz oʻchirilmagan.');
+    const legacy = await clerkClient.users.getUserList({ emailAddress: [claims.email], limit: 2 });
+    matches = legacy.data.filter((user) => user.emailAddresses.some((email) =>
+      email.emailAddress.toLowerCase() === claims.email.toLowerCase() && email.verification?.status === 'verified'));
+  }
   if (matches.length > 1) throw new AuthError(409, 'Bu email bir nechta oldingi hisobga bogʻlangan. Hisobni alohida tekshirish kerak.');
   const accountId = matches[0]?.id ?? `firebase_${claims.sub}`;
   try {

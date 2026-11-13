@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { createUserWithEmailAndPassword, reload, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseAuth } from '@/lib/firebase';
+import { FIREBASE_NOT_CONFIGURED_MESSAGE, firebaseConfigured } from '@/lib/firebase-config';
 import { startGoogleSignIn } from '@/lib/google-sign-in';
-import { useSession } from '@/context/AuthContext';
+import { safeAppRoute, useSession } from '@/context/AuthContext';
 import { useLocale } from '@/context/LocaleContext';
 
 export type LoginMode = 'signin' | 'signup' | 'verify' | 'forgot';
@@ -13,6 +14,7 @@ export function authErrorText(error: unknown): string {
     'auth/unauthorized-domain': 'Bu domen Firebase’da ruxsat etilmagan. Authentication → Settings → Authorized domains boʻlimiga ilova domenini qoʻshing.',
     'auth/operation-not-allowed': 'Firebase Console’da tanlangan kirish usulini yoqing: Google yoki Email/Password.',
     'auth/popup-blocked': 'Brauzer kirish oynasini toʻsdi. Qalqib chiquvchi oynalarga ruxsat berib, yana Google tugmasini bosing.',
+    'zoo/framed': 'Ilova boshqa sahifa ichida ochilgan, bu yerda Google oynasi ishlamaydi. Ilovani brauzerning alohida oynasida oching.',
     'auth/popup-closed-by-user': 'Google orqali kirish tugallanmasdan oyna yopildi.',
     'auth/cancelled-popup-request': 'Oldingi kirish oynasi bekor qilindi. Bitta oynada davom eting.',
     'auth/invalid-credential': 'Email yoki parol notoʻgʻri. Oldingi hisobingiz boʻlsa, Firebase’da shu email bilan bir marta roʻyxatdan oʻting va uni tasdiqlang. Eski parol avtomatik koʻchirilmaydi.',
@@ -37,16 +39,23 @@ export function useLogin() {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
+  const { next } = useLocalSearchParams<{ next?: string }>();
+  // After sign-in the user lands on their profile (or the screen that sent them here).
+  const target = safeAppRoute(next) ?? '/profile';
+  const { setPostLoginRoute, takePostLoginRoute } = session;
   useEffect(() => {
     if (session.user && !session.user.emailVerified) setMode('verify');
-    if (session.isSignedIn) router.replace('/');
-  }, [session.user, session.isSignedIn]);
+    if (session.isSignedIn) router.replace((takePostLoginRoute() ?? target) as never);
+  }, [session.user, session.isSignedIn, takePostLoginRoute, target]);
 
   const switchMode = (next: LoginMode) => { setMode(next); setError(''); setInfo(''); };
   const run = async (operation: () => Promise<unknown>, reportGoogleError = false) => {
     if (loading) return;
+    if (!firebaseConfigured) { setInfo(''); setError(FIREBASE_NOT_CONFIGURED_MESSAGE); return; }
     setLoading(true); setError(''); setInfo('');
+    setPostLoginRoute(target);
     try { await operation(); } catch (cause) {
+      setPostLoginRoute(null);
       const message = authErrorText(cause);
       setError(message);
       if (reportGoogleError) session.setGoogleFlowError(message);

@@ -1,8 +1,9 @@
 import { requestListingUpload } from '@workspace/api-client-react';
 import { Platform } from 'react-native';
+import { apiUrl } from './api-origin';
 
 export const assetUrl = (uri: string) =>
-  uri.startsWith('/api/') ? `https://${process.env.EXPO_PUBLIC_DOMAIN}${uri}` : uri;
+  uri.startsWith('/api/') ? apiUrl(uri) : uri;
 
 export async function persistListingImages(images: string[]): Promise<string[]> {
   const saved: string[] = [];

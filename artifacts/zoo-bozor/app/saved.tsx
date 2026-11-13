@@ -1,47 +1,89 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
-import { C } from '@/constants/colors';
+import { ScrollView, View } from 'react-native';
+import { F } from '@/constants/colors';
+import { makeStyles, useTheme } from '@/context/ThemeContext';
 import { CATEGORIES, PRODUCTS, PRODUCT_CATEGORIES } from '@/constants/data';
 import { useApp } from '@/context/AppContext';
-import { Button, Chip, EmptyState, ListingCard, ProductCard, ScreenHeader, go, useBottomInset } from '@/components/ui';
+import { Button, Chip, EmptyState, ListingCard, ProductCard, ScreenHeader, SearchBar, go, useBottomInset } from '@/components/ui';
+import { CardGrid } from '@/components/CardGrid';
 
 export default function Saved() {
+  const { C } = useTheme();
+  const st = useSt();
   const { favorites, favoriteProducts, allListings } = useApp();
-  const { width } = useWindowDimensions();
   const bottom = useBottomInset();
-  const [tab, setTab] = useState<'animals' | 'products'>('animals');
-  const [cat, setCat] = useState('all');
-  const cardW = (Math.min(width, 600) - 44) / 2;
+  const [tab, setTab] = useState<'all' | 'animals' | 'products'>('all');
+  const [q, setQ] = useState('');
 
-  const animals = allListings.filter((l) => favorites.includes(l.id) && (cat === 'all' || l.category === cat));
-  const products = PRODUCTS.filter((p) => favoriteProducts.includes(p.id) && (cat === 'all' || p.category === cat));
-  const cats = tab === 'animals' ? CATEGORIES.map((c) => ({ id: c.id, label: c.label })) : PRODUCT_CATEGORIES.filter((c) => c.id !== 'all');
+  const totalCount = favorites.length + favoriteProducts.length;
+
+  const animals = allListings.filter(
+    (l) => favorites.includes(l.id) && (q.trim() === '' || l.title.toLowerCase().includes(q.toLowerCase()))
+  );
+  const products = PRODUCTS.filter(
+    (p) => favoriteProducts.includes(p.id) && (q.trim() === '' || p.title.toLowerCase().includes(q.toLowerCase()))
+  );
+
+  const showAnimals = tab === 'all' || tab === 'animals';
+  const showProducts = tab === 'all' || tab === 'products';
+
+  const isEmpty = (showAnimals ? animals.length : 0) + (showProducts ? products.length : 0) === 0;
 
   return (
     <View style={{ flex: 1, backgroundColor: C.surface }}>
-      <ScreenHeader title="Saqlanganlar" />
+      <ScreenHeader title="Saqlangan" />
+
+      <View style={{ paddingHorizontal: 16, marginBottom: 8 }}>
+        <SearchBar
+          value={q}
+          onChangeText={setQ}
+          placeholder="Saqlanganlardan qidirish"
+        />
+      </View>
+
       <ScrollView contentContainerStyle={{ paddingBottom: bottom + 24 }}>
+        {/* Figma 23:96 Tabs: Barchasi • 8, Hayvonlar • 5, Mahsulotlar • 3 */}
         <View style={st.seg}>
-          <Chip label={`Hayvonlar (${favorites.length})`} active={tab === 'animals'} onPress={() => { setTab('animals'); setCat('all'); }} testID="saved-animals" />
-          <Chip label={`Mahsulotlar (${favoriteProducts.length})`} active={tab === 'products'} onPress={() => { setTab('products'); setCat('all'); }} testID="saved-products" />
+          <Chip
+            label={`Barchasi • ${totalCount}`}
+            active={tab === 'all'}
+            onPress={() => setTab('all')}
+            testID="saved-all"
+          />
+          <Chip
+            label={`Hayvonlar • ${favorites.length}`}
+            active={tab === 'animals'}
+            onPress={() => setTab('animals')}
+            testID="saved-animals"
+          />
+          <Chip
+            label={`Mahsulotlar • ${favoriteProducts.length}`}
+            active={tab === 'products'}
+            onPress={() => setTab('products')}
+            testID="saved-products"
+          />
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8, paddingBottom: 12 }}>
-          <Chip label="Hammasi" active={cat === 'all'} onPress={() => setCat('all')} />
-          {cats.map((c) => (
-            <Chip key={c.id} label={c.label} active={cat === c.id} onPress={() => setCat(c.id)} />
-          ))}
-        </ScrollView>
-        <View style={st.grid}>
-          {tab === 'animals'
-            ? animals.map((l) => <ListingCard key={l.id} item={l} style={{ width: cardW }} />)
-            : products.map((p) => <ProductCard key={p.id} item={p} style={{ width: cardW }} />)}
-        </View>
-        {(tab === 'animals' ? animals : products).length === 0 ? (
+
+        <CardGrid gap={12} style={st.grid}>
+          {showAnimals ? animals.map((l) => <ListingCard key={l.id} item={l} />) : null}
+          {showProducts ? products.map((p) => <ProductCard key={p.id} item={p} />) : null}
+        </CardGrid>
+
+        {isEmpty ? (
           <EmptyState
             icon="heart"
             title="Hozircha boʻsh"
-            text={cat === 'all' ? 'Yoqqan eʼlon yoki mahsulotdagi yurakchani bosing — ular shu yerda saqlanadi.' : 'Bu kategoriyada saqlanganlar yoʻq.'}
-            action={<Button label={tab === 'animals' ? 'Eʼlonlarni koʻrish' : 'Marketga oʻtish'} onPress={() => go(tab === 'animals' ? '/listings' : '/market')} />}
+            text={
+              q
+                ? 'Qidiruv boʻyicha hech narsa topilmadi.'
+                : 'Yoqqan eʼlon yoki mahsulotdagi yurakchani bosing — ular shu yerda saqlanadi.'
+            }
+            action={
+              <Button
+                label={tab === 'products' ? 'Marketga oʻtish' : 'Eʼlonlarni koʻrish'}
+                onPress={() => go(tab === 'products' ? '/market' : '/listings')}
+              />
+            }
           />
         ) : null}
       </ScrollView>
@@ -49,7 +91,7 @@ export default function Saved() {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((C) => ({
   seg: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 8 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: 16 },
-});
+  grid: { paddingHorizontal: 16 },
+}));

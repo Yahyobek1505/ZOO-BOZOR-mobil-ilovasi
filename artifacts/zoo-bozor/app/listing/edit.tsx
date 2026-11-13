@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Linking, Platform, Pressable, View } from 'react-native';
 import { Text, TextInput } from '@/components/LocalizedText';
 import { Alert } from '@/components/AppAlert';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -9,14 +9,15 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSession } from '@/context/AuthContext';
-import { C, F } from '@/constants/colors';
-import { CATEGORIES, CITIES, GeoPoint, Listing } from '@/constants/data';
+import { F } from '@/constants/colors';
+import { makeStyles, useTheme } from '@/context/ThemeContext';
+import { CATEGORIES, CITIES, GeoPoint, Listing, formatPrice, timeAgo } from '@/constants/data';
 import { decimalOnly, digitsOnly, displayPhone, normalizePhone } from '@/constants/input';
 import { newId, useApp } from '@/context/AppContext';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
-import { useBottomInset } from '@/components/ui';
+import { go, src, useBottomInset, useTopInset } from '@/components/ui';
 import { Field } from '@/components/Field';
-import { CurvedHeader, HeaderAction, Hint, Label, PillButton, Select, StepDots, Tile, kit } from '@/components/FormKit';
+import { CurvedHeader, HeaderAction, Hint, Label, PillButton, Select, StepDots, Tile, useKit } from '@/components/FormKit';
 import { assetUrl } from '@/lib/listing-images';
 import { ImageFileInput } from '@/components/ImageFileInput';
 
@@ -49,19 +50,118 @@ function fromListing(l: (Listing & Extra) | undefined, region: string): Form {
 
 const fmtPrice = (v: string) => v.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
+const ART_TYPE = require('@/assets/figma/post-type.png');
+const ART_ANIMAL = require('@/assets/figma/post-animal.png');
+const ART_GOODS = require('@/assets/figma/post-goods.png');
+const ART_DONE = require('@/assets/figma/post-done.png');
+
+/** Figma "Yangi eʼlon": choose what to post before the form. */
+function TypeStep({ onBack, onAnimal }: { onBack: () => void; onAnimal: () => void }) {
+  const { C } = useTheme();
+  const st = useSt();
+  const top = useTopInset();
+  return (
+    <View style={{ flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', backgroundColor: C.dark ? C.surface : C.card }}>
+      <View style={[st.plainHead, { paddingTop: top + 14 }]}>
+        <Pressable onPress={onBack} hitSlop={12} accessibilityRole="button" accessibilityLabel="Orqaga" testID="header-back" style={{ width: 40 }}>
+          <Feather name="chevron-left" size={28} color={C.text} />
+        </Pressable>
+        <Text style={st.plainTitle}>Yangi eʼlon</Text>
+        <View style={{ width: 40 }} />
+      </View>
+      <View style={{ alignItems: 'center', paddingHorizontal: 20 }}>
+        <Image source={ART_TYPE} style={{ width: 175, height: 122, marginTop: 24 }} contentFit="contain" />
+        <Text style={st.typeTitle}>Nima joylamoqchisiz?</Text>
+        <Text style={st.typeSub}>Eʼlon turini tanlang!</Text>
+      </View>
+      <View style={{ paddingHorizontal: 20, gap: 12, marginTop: 30 }}>
+        <Pressable onPress={onAnimal} style={({ pressed }) => [st.typeCard, pressed && { opacity: 0.85 }]} accessibilityRole="button" testID="type-animal">
+          <Image source={ART_ANIMAL} style={st.typeArt} contentFit="cover" />
+          <View style={{ flex: 1, gap: 4 }}>
+            <Text style={st.typeCardTitle}>Hayvon eʼloni</Text>
+            <Text style={st.typeCardSub}>Mushuk, it, qush va boshqa hayvonlar.</Text>
+          </View>
+          <Feather name="chevron-right" size={24} color={C.mutedDark} />
+        </Pressable>
+        {/* Goods listings have no backend model yet; the card stays so the Figma choice is visible. */}
+        <Pressable
+          onPress={() => Alert.alert('Tez orada', 'Ozuqa va buyumlar eʼlonlari hali qoʻshilmagan. Hozircha hayvon eʼlonini joylash mumkin.')}
+          style={({ pressed }) => [st.typeCard, { opacity: pressed ? 0.6 : 0.7 }]}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: true }}
+          testID="type-goods"
+        >
+          <Image source={ART_GOODS} style={st.typeArt} contentFit="cover" />
+          <View style={{ flex: 1, gap: 4 }}>
+            <Text style={st.typeCardTitle}>Ozuqa va Buyumlar</Text>
+            <Text style={st.typeCardSub}>Ozuqa, aksessuar va boshqa buyumlar.</Text>
+            <View style={st.soon}><Text style={st.soonTxt}>Tez orada</Text></View>
+          </View>
+          <Feather name="chevron-right" size={24} color={C.mutedDark} />
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+/**
+ * Figma "Tekshiruvda" layout. Listings are published straight away (there is no moderation queue),
+ * so the copy says the listing is live instead of "sent for review".
+ */
+function DoneStep({ listing }: { listing: Listing }) {
+  const { C } = useTheme();
+  const st = useSt();
+  const bottom = useBottomInset();
+  return (
+    <View style={{ flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', backgroundColor: C.dark ? C.surface : C.card }}>
+      <CurvedHeader title="Eʼlon joylandi" onBack={() => router.replace(`/listing/${listing.id}` as never)} />
+      <View style={{ flex: 1, paddingHorizontal: 14, paddingBottom: bottom + 24 }}>
+        <View style={{ alignItems: 'center' }}>
+          <Image source={ART_DONE} style={{ width: 140, height: 140, marginTop: 32 }} contentFit="contain" />
+          <Text style={st.doneTitle}>Eʼlon joylandi</Text>
+          <Text style={st.doneSub}>Eʼloningiz endi barcha foydalanuvchilarga koʻrinadi.</Text>
+        </View>
+        <Pressable onPress={() => router.replace(`/listing/${listing.id}` as never)} style={st.doneCard} accessibilityRole="button" testID="done-open-listing">
+          {listing.images[0] !== undefined
+            ? <Image source={src(listing.images[0])} style={st.doneImg} contentFit="cover" />
+            : <View style={[st.doneImg, { backgroundColor: C.secondary }]} />}
+          <View style={{ flex: 1, gap: 3 }}>
+            <Text style={st.doneCardTitle} numberOfLines={1}>{listing.title}</Text>
+            <Text style={st.donePrice}>{formatPrice(listing.price)} soʻm</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Feather name="map-pin" size={11} color={C.text} />
+              <Text style={st.doneMeta} numberOfLines={1}>{listing.city}, {listing.district}</Text>
+            </View>
+            <Text style={st.doneMeta}>{timeAgo(listing.createdAt)}</Text>
+          </View>
+          <Feather name="chevron-right" size={22} color={C.mutedDark} />
+        </Pressable>
+        <View style={{ flex: 1 }} />
+        <PillButton label="Eʼlonlarim" variant="navy" icon="list" onPress={() => { router.replace('/my-listings' as never); }} testID="done-my-listings" />
+        <Text style={[st.note, { marginTop: 16 }]}>Holatni “Eʼlonlarim” boʻlimida kuzatishingiz mumkin.</Text>
+      </View>
+    </View>
+  );
+}
+
 export default function EditListing() {
+  const { C } = useTheme();
+  const st = useSt();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { getListing, listingsLoading } = useApp();
   const existing = id ? getListing(String(id)) : undefined;
-  if (id && !existing && listingsLoading) return <ActivityIndicator color={C.navy} />;
-  if (id && !existing?.own) return <View style={{ flex: 1, backgroundColor: C.white }}>
+  if (id && !existing && listingsLoading) return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: C.dark ? C.surface : C.card }}><ActivityIndicator color={C.text} /></View>;
+  if (id && !existing?.own) return <View style={{ flex: 1, backgroundColor: C.dark ? C.surface : C.card }}>
     <CurvedHeader title="Eʼlonni tahrirlash" onBack={() => router.back()} />
-    <Text style={{ padding: 24, color: C.navy }}>Eʼlon topilmadi yoki uni tahrirlash huquqingiz yoʻq.</Text>
+    <Text style={{ padding: 24, color: C.text }}>Eʼlon topilmadi yoki uni tahrirlash huquqingiz yoʻq.</Text>
   </View>;
   return <ListingForm key={id ?? 'new'} existing={existing} />;
 }
 
 function ListingForm({ existing }: { existing?: Listing & Extra }) {
+  const { C } = useTheme();
+  const st = useSt();
+  const kit = useKit();
   const { saveListing, profile } = useApp();
   const { accountId: userId } = useSession();
   const bottom = useBottomInset();
@@ -70,6 +170,8 @@ function ListingForm({ existing }: { existing?: Listing & Extra }) {
 
   const [f, setF] = useState<Form>(() => fromListing(editing ? existing : undefined, profile.region));
   const [step, setStep] = useState(0);
+  const [stage, setStage] = useState<'type' | 'form'>(editing ? 'form' : 'type');
+  const [done, setDone] = useState<Listing | null>(null);
   const [errors, setErrors] = useState<Errors>({});
   const [locating, setLocating] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
@@ -89,7 +191,7 @@ function ListingForm({ existing }: { existing?: Listing & Extra }) {
           { text: 'Yoʻq', style: 'cancel' },
           { text: 'Tiklash', onPress: () => {
             if (!editing && d.listingId) listingId.current = d.listingId;
-            setF({ ...d.form, geoExact: false }); setStep(Math.min(2, d.step)); setSavedAt(d.at);
+            setF({ ...d.form, geoExact: false }); setStep(Math.min(2, d.step)); setSavedAt(d.at); setStage('form');
           } },
         ]);
       } catch { /* corrupted draft is ignored, never deleted silently */ }
@@ -190,7 +292,7 @@ function ListingForm({ existing }: { existing?: Listing & Extra }) {
       try {
         await AsyncStorage.setItem(draftKey, JSON.stringify({ form: f, step, at: Date.now(), listingId: listingId.current }));
         Alert.alert('Hisobingizga kiring', 'Qoralamangiz shu qurilmada saqlandi. Kirganingizdan keyin uni tiklab, eʼlonni hammaga koʻrsatishingiz mumkin.', [
-          { text: 'Keyinroq', style: 'cancel' }, { text: 'Kirish', onPress: () => router.push('/login') },
+          { text: 'Keyinroq', style: 'cancel' }, { text: 'Kirish', onPress: () => router.push('/login?next=/listing/edit') },
         ]);
       } catch { Alert.alert('Saqlanmadi', 'Qoralamani saqlab boʻlmadi. Ilovani yopmay, qayta urinib koʻring.'); }
       return;
@@ -233,7 +335,8 @@ function ListingForm({ existing }: { existing?: Listing & Extra }) {
       await AsyncStorage.setItem(draftKey, JSON.stringify({ form: f, step, at: Date.now(), listingId: listingId.current }));
       const saved = await saveListing(listing);
       await AsyncStorage.removeItem(draftKey).catch(() => undefined);
-      router.replace(`/listing/${saved.id}` as never);
+      if (editing) router.replace(`/listing/${saved.id}` as never);
+      else setDone(saved);
     } catch (err) {
       Alert.alert('Saqlanmadi', `${err instanceof Error ? err.message : 'Eʼlonni saqlab boʻlmadi.'} Qoralama oʻchirilmagan.`);
     } finally {
@@ -251,8 +354,11 @@ function ListingForm({ existing }: { existing?: Listing & Extra }) {
     ]);
   };
 
+  if (done) return <DoneStep listing={done} />;
+  if (stage === 'type') return <TypeStep onBack={() => router.back()} onAnimal={() => setStage('form')} />;
+
   return (
-    <View style={{ flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', backgroundColor: C.white }}>
+    <View style={{ flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', backgroundColor: C.dark ? C.surface : C.card }}>
       <CurvedHeader title={editing ? 'Eʼlonni tahrirlash' : 'Eʼlon joylash'} onBack={back} right={<HeaderAction label="Saqlash" onPress={saveDraft} testID="save-draft" />} />
       <StepDots step={step} />
       <KeyboardAwareScrollViewCompat
@@ -278,7 +384,7 @@ function ListingForm({ existing }: { existing?: Listing & Extra }) {
               <Text style={st.h2}>Suratlar * <Text style={st.counter}>({f.images.length}/8)</Text></Text>
               <View style={st.grid}>
                 <Pressable onPress={Platform.OS === 'web' ? undefined : pick} style={[st.cell, st.add, errors.images ? { borderWidth: 2, borderColor: C.destructive } : null]} testID="pick-image" accessibilityRole="button" accessibilityLabel="Rasm qoʻshish">
-                  <Feather name="image" size={30} color={C.navy} />
+                  <Feather name="image" size={30} color={C.ink} />
                   <View style={st.plus}><Feather name="plus" size={12} color={C.lime} /></View>
                   <ImageFileInput remaining={8 - f.images.length} onImages={(images) => set('images', [...f.images, ...images].slice(0, 8))} onError={(message) => setErrors((old) => ({ ...old, images: message }))} />
                 </Pressable>
@@ -287,7 +393,7 @@ function ListingForm({ existing }: { existing?: Listing & Extra }) {
                     <Image source={{ uri: assetUrl(uri) }} style={st.img} contentFit="cover" />
                     {i === 0 ? <View style={st.cover}><Text style={st.coverTxt}>Asosiy</Text></View> : null}
                     <Pressable onPress={() => removeImage(i)} style={st.remove} hitSlop={6} accessibilityRole="button" accessibilityLabel="Rasmni oʻchirish" testID={`remove-image-${i}`}>
-                      <Feather name="x" size={12} color={C.navy} />
+                      <Feather name="x" size={12} color={C.ink} />
                     </Pressable>
                   </Pressable>
                 ))}
@@ -355,11 +461,11 @@ function ListingForm({ existing }: { existing?: Listing & Extra }) {
               <Tile label="Olib ketish" icon="shopping-bag" active={!f.delivery} onPress={() => set('delivery', false)} testID="pickup" />
               <Tile label="Yetkazib berish" icon="truck" active={f.delivery} onPress={() => set('delivery', true)} testID="delivery" />
             </View>
-            <Field label="Aloqa raqami *" value={f.phone} onChangeText={(v) => set('phone', v)} keyboardType="phone-pad" maxLength={12} placeholder="998901234567" error={errors.phone} testID="phone" style={kit.input} />
+            <Field label="Aloqa raqami *" value={f.phone} onChangeText={(v) => set('phone', digitsOnly(v).slice(0, 12))} keyboardType="phone-pad" placeholder="998901234567" error={errors.phone} testID="phone" style={kit.input} />
             {!errors.phone ? <Hint text={normalizePhone(f.phone) ? `Xaridorlar koʻradi: ${displayPhone(f.phone)}` : 'Shu eʼlon uchun sotuvchi raqami. Tasdiqlanmaydi.'} /> : null}
             <Label text="Hozirgi joylashuv" />
             <Pressable onPress={locate} disabled={locating} style={st.locate} accessibilityRole="button" testID="locate">
-              <Feather name={f.geoExact ? 'check-circle' : 'map-pin'} size={20} color={C.navy} />
+              <Feather name={f.geoExact ? 'check-circle' : 'map-pin'} size={20} color={C.text} />
               <Text style={st.locateTxt}>{locating ? 'Aniqlanmoqda...' : f.geoExact ? 'Aniq joylashuv olindi' : 'Joriy joylashuvni olish'}</Text>
               <View style={st.locArrow}><Feather name="arrow-right" size={13} color={C.white} /></View>
             </Pressable>
@@ -385,9 +491,9 @@ function ListingForm({ existing }: { existing?: Listing & Extra }) {
   );
 }
 
-const st = StyleSheet.create({
-  h1: { fontFamily: F.dExtra, fontSize: 22, color: C.navy, marginBottom: 4 },
-  h2: { fontFamily: F.dExtra, fontSize: 16, color: C.navy },
+const useSt = makeStyles((C) => ({
+  h1: { fontFamily: F.dExtra, fontSize: 22, color: C.text, marginBottom: 4 },
+  h2: { fontFamily: F.dExtra, fontSize: 16, color: C.text },
   counter: { fontFamily: F.medium, fontSize: 12, color: C.mutedForeground },
   row: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -398,13 +504,30 @@ const st = StyleSheet.create({
   cover: { position: 'absolute', left: 4, top: 4, backgroundColor: C.navy, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1 },
   coverTxt: { fontFamily: F.semibold, fontSize: 9, color: C.lime },
   remove: { position: 'absolute', right: 5, bottom: 5, width: 20, height: 20, borderRadius: 10, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center' },
-  unitWrap: { height: 48, borderRadius: 12, borderWidth: 1, borderColor: '#d9dce3', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14 },
-  unitInput: { flex: 1, height: '100%', fontFamily: F.dBold, fontSize: 15, color: C.navy },
-  unit: { fontFamily: F.dBold, fontSize: 14, color: C.navy, marginLeft: 8 },
+  unitWrap: { height: 48, borderRadius: 12, borderWidth: 1, borderColor: C.dark ? C.border : '#d9dce3', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14 },
+  unitInput: { flex: 1, height: '100%', fontFamily: F.dBold, fontSize: 15, color: C.text },
+  unit: { fontFamily: F.dBold, fontSize: 14, color: C.text, marginLeft: 8 },
   fixed: { height: 48, borderRadius: 12, backgroundColor: C.lime, alignItems: 'center', justifyContent: 'center' },
-  fixedTxt: { fontFamily: F.dBold, fontSize: 14, color: C.navy },
-  locate: { height: 56, borderRadius: 14, backgroundColor: '#ececee', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, gap: 12 },
-  locateTxt: { flex: 1, fontFamily: F.dBold, fontSize: 14, color: C.navy },
+  fixedTxt: { fontFamily: F.dBold, fontSize: 14, color: C.ink },
+  locate: { height: 56, borderRadius: 14, backgroundColor: C.dark ? C.secondary : '#ececee', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, gap: 12 },
+  locateTxt: { flex: 1, fontFamily: F.dBold, fontSize: 14, color: C.text },
   locArrow: { width: 22, height: 22, borderRadius: 11, backgroundColor: C.navy, alignItems: 'center', justifyContent: 'center' },
+  plainHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingBottom: 8 },
+  plainTitle: { fontFamily: F.dBold, fontSize: 18, color: C.text },
+  typeTitle: { fontFamily: F.dExtra, fontSize: 24, color: C.text, marginTop: 18, textAlign: 'center' },
+  typeSub: { fontFamily: F.dMedium, fontSize: 15, color: C.text, marginTop: 4 },
+  typeCard: { flexDirection: 'row', alignItems: 'center', gap: 18, borderWidth: 1, borderColor: C.dark ? C.border : '#e2e2e2', borderRadius: 22, padding: 7, paddingRight: 18, backgroundColor: C.card },
+  typeArt: { width: 103, height: 101, borderRadius: 18 },
+  typeCardTitle: { fontFamily: F.dExtra, fontSize: 16, color: C.text },
+  typeCardSub: { fontFamily: F.dMedium, fontSize: 12, color: C.text, lineHeight: 17 },
+  soon: { alignSelf: 'flex-start', backgroundColor: C.secondary, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2, marginTop: 2 },
+  soonTxt: { fontFamily: F.dBold, fontSize: 10, color: C.mutedDark },
+  doneTitle: { fontFamily: F.dExtra, fontSize: 22, color: C.text, marginTop: 16, textAlign: 'center' },
+  doneSub: { fontFamily: F.dMedium, fontSize: 13, color: C.text, marginTop: 6, textAlign: 'center', lineHeight: 18 },
+  doneCard: { flexDirection: 'row', alignItems: 'center', gap: 14, borderWidth: 1, borderColor: C.dark ? C.border : '#ececec', borderRadius: 10, padding: 7, paddingRight: 14, marginTop: 40 },
+  doneImg: { width: 86, height: 86, borderRadius: 8 },
+  doneCardTitle: { fontFamily: F.dMedium, fontSize: 13, color: C.text },
+  donePrice: { fontFamily: F.dExtra, fontSize: 17, color: C.text },
+  doneMeta: { fontFamily: F.dMedium, fontSize: 11, color: C.mutedForeground },
   note: { fontFamily: F.regular, fontSize: 12, color: C.mutedForeground, textAlign: 'center', lineHeight: 17 },
-});
+}));

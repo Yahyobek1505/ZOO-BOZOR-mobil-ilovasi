@@ -1,4 +1,4 @@
-import React from "react";
+import React, { createContext, useContext } from "react";
 import {
   Text as NativeText,
   TextInput as NativeTextInput,
@@ -6,6 +6,10 @@ import {
   type TextProps,
 } from "react-native";
 import { useLocale } from "@/context/LocaleContext";
+import { useTheme } from "@/context/ThemeContext";
+
+// Nested <Text> must keep inheriting its parent's colour, so only the outermost one gets the theme default.
+const InsideText = createContext(false);
 
 function localizeChildren(children: React.ReactNode, t: (value: string) => string): React.ReactNode {
   if (typeof children === "string") return t(children);
@@ -16,19 +20,25 @@ function localizeChildren(children: React.ReactNode, t: (value: string) => strin
 }
 
 /** Translates the app's shared, visible strings while preserving rich Text children. */
-export function Text({ children, accessibilityLabel, ...props }: TextProps) {
+export function Text({ children, accessibilityLabel, style, ...props }: TextProps) {
   const { t } = useLocale();
+  const { C } = useTheme();
+  const nested = useContext(InsideText);
   return <NativeText
     {...props}
+    style={nested ? style : [{ color: C.text }, style]}
     accessibilityLabel={accessibilityLabel ? t(accessibilityLabel) : undefined}
-  >{localizeChildren(children, t)}</NativeText>;
+  ><InsideText.Provider value>{localizeChildren(children, t)}</InsideText.Provider></NativeText>;
 }
 
 /** Keeps text-entry labels and placeholders in the selected language too. */
-export function TextInput({ placeholder, accessibilityLabel, ...props }: TextInputProps) {
+export function TextInput({ placeholder, accessibilityLabel, style, placeholderTextColor, ...props }: TextInputProps) {
   const { t } = useLocale();
+  const { C } = useTheme();
   return <NativeTextInput
     {...props}
+    style={[{ color: C.text }, style]}
+    placeholderTextColor={placeholderTextColor ?? C.mutedForeground}
     placeholder={placeholder ? t(placeholder) : undefined}
     accessibilityLabel={accessibilityLabel ? t(accessibilityLabel) : undefined}
   />;

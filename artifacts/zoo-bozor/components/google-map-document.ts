@@ -1,4 +1,7 @@
-import { C } from '@/constants/colors';
+import colors from '@/constants/colors';
+
+// The map page itself stays in the day palette (OSM/Google/Yandex tiles are light).
+const C = colors.light;
 import type { GeoPoint } from '@/constants/data';
 import type { MapPin } from './map-document';
 

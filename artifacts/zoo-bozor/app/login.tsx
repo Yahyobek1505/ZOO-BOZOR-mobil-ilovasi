@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Text, TextInput } from '@/components/LocalizedText';
 import { router } from 'expo-router';
 import { Image } from 'expo-image';
-import { Feather } from '@expo/vector-icons';
-import { C, F } from '@/constants/colors';
+import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Alert } from '@/components/AppAlert';
+import { F } from '@/constants/colors';
+import { makeStyles, useTheme } from '@/context/ThemeContext';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { useBottomInset, useTopInset } from '@/components/ui';
 import { PillButton } from '@/components/FormKit';
@@ -13,6 +15,8 @@ import { useLogin, type LoginMode } from '@/hooks/useLogin';
 function AuthInput({ label, value, onChange, password, testID }: {
   label: string; value: string; onChange: (value: string) => void; password?: boolean; testID: string;
 }) {
+  const { C } = useTheme();
+  const st = useSt();
   const [hidden, setHidden] = useState(true);
   return <View style={{ gap: 8 }}>
     <Text style={st.label}>{label}</Text>
@@ -32,6 +36,8 @@ function AuthInput({ label, value, onChange, password, testID }: {
 }
 
 export default function Login() {
+  const { C } = useTheme();
+  const st = useSt();
   const top = useTopInset();
   const bottom = useBottomInset();
   const auth = useLogin();
@@ -44,7 +50,7 @@ export default function Login() {
   return <View style={st.root}>
     <KeyboardAwareScrollViewCompat contentContainerStyle={{ paddingTop: top + 24, paddingHorizontal: 24, paddingBottom: bottom + 24, gap: 18, flexGrow: 1 }} bottomOffset={30}>
       {auth.mode !== 'signin' && auth.mode !== 'verify' ? <Pressable onPress={() => auth.switchMode('signin')} style={st.back} accessibilityRole="button" accessibilityLabel="Orqaga" testID="login-back">
-        <Feather name="chevron-left" size={22} color={C.navy} />
+        <Feather name="chevron-left" size={22} color={C.text} />
       </Pressable> : null}
       <Image source={require('@/assets/figma/login-illustration-2.png')} style={st.art} contentFit="contain" accessibilityLabel="Mushuk va kuchuk eshik oldida" />
       <Text style={st.title}>{titles[auth.mode]}</Text>
@@ -75,9 +81,19 @@ export default function Login() {
       </> : null}
       {credentials ? <>
         <View style={st.orRow}><View style={st.orLine} /><Text style={st.or}>yoki</Text><View style={st.orLine} /></View>
-        <Pressable onPress={auth.doGoogle} disabled={auth.loading} style={({ pressed }) => [st.google, pressed && { opacity: 0.8 }]} accessibilityRole="button" accessibilityLabel="Google orqali kirish" testID="login-google">
-          <Text style={st.gMark}>G</Text><Text style={st.googleTxt}>Google orqali davom etish</Text>
-        </Pressable>
+        {/* Figma: three square buttons. Only Google is connected; phone (SMS) and Apple stay dimmed and explain why. */}
+        <View style={st.socialRow}>
+          <Pressable onPress={() => Alert.alert('Telefon orqali kirish', 'SMS orqali kirish hali ulanmagan. Hozircha email yoki Google bilan kiring.')} style={[st.social, st.soon]} accessibilityRole="button" accessibilityState={{ disabled: true }} accessibilityLabel="Telefon orqali kirish" testID="login-phone">
+            <Feather name="smartphone" size={26} color={C.text} />
+          </Pressable>
+          <Pressable onPress={auth.doGoogle} disabled={auth.loading} style={({ pressed }) => [st.social, pressed && { opacity: 0.7 }]} accessibilityRole="button" accessibilityLabel="Google orqali kirish" testID="login-google">
+            <Text style={st.gMark}>G</Text>
+          </Pressable>
+          <Pressable onPress={() => Alert.alert('Apple ID orqali kirish', 'Apple ID orqali kirish hali ulanmagan. Hozircha email yoki Google bilan kiring.')} style={[st.social, st.soon]} accessibilityRole="button" accessibilityState={{ disabled: true }} accessibilityLabel="Apple ID orqali kirish" testID="login-apple">
+            <Ionicons name="logo-apple" size={30} color={C.dark ? C.white : "#000"} />
+          </Pressable>
+        </View>
+        <Text style={st.socialNote}>Telefon va Apple ID orqali kirish tez orada</Text>
         <Pressable onPress={() => auth.switchMode(auth.mode === 'signin' ? 'signup' : 'signin')} style={{ alignSelf: 'center' }} accessibilityRole="button" testID="login-switch">
           <Text style={st.switchTxt}>{auth.mode === 'signin' ? 'Hisobingiz yoʻqmi? ' : 'Hisobingiz bormi? '}
             <Text style={st.switchBold}>{auth.mode === 'signin' ? 'Roʻyxatdan oʻting' : 'Kiring'}</Text>
@@ -87,34 +103,36 @@ export default function Login() {
       </> : null}
       <View style={{ flex: 1 }} />
       <Pressable onPress={() => (router.canGoBack() ? router.back() : goHome())} style={st.guest} accessibilityRole="button" testID="login-guest">
-        <Feather name="user" size={18} color={C.navy} /><Text style={st.guestTxt}>Mehmon sifatida davom etish</Text><Feather name="chevron-right" size={18} color={C.navy} />
+        <MaterialCommunityIcons name="ghost" size={22} color={C.text} /><Text style={st.guestTxt}>Mehmon sifatida davom etish</Text><Feather name="chevron-right" size={18} color={C.text} />
       </Pressable>
     </KeyboardAwareScrollViewCompat>
   </View>;
 }
 
-const st = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.white },
-  back: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' },
+const useSt = makeStyles((C) => ({
+  root: { flex: 1, backgroundColor: C.dark ? C.surface : C.card },
+  back: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.dark ? C.secondary : C.surface, alignItems: 'center', justifyContent: 'center' },
   art: { width: 240, height: 130, alignSelf: 'center' },
-  title: { fontFamily: F.dExtra, fontSize: 21, color: C.navy, textAlign: 'center', marginBottom: 8 },
-  label: { fontFamily: F.dBold, fontSize: 13, color: C.navy, marginLeft: 12 },
+  title: { fontFamily: F.dExtra, fontSize: 21, color: C.text, textAlign: 'center', marginBottom: 8 },
+  label: { fontFamily: F.dBold, fontSize: 13, color: C.text, marginLeft: 12 },
   inputWrap: { height: 54, borderRadius: 27, borderWidth: 1, borderColor: C.border, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 14 },
-  input: { flex: 1, height: '100%', fontFamily: F.medium, fontSize: 15, color: C.navy },
-  link: { fontFamily: F.dBold, fontSize: 13, color: C.navy, textDecorationLine: 'underline' },
-  info: { fontFamily: F.medium, fontSize: 13, color: C.navy, backgroundColor: C.secondary, padding: 12, borderRadius: 14, textAlign: 'center' },
-  explanation: { fontFamily: F.medium, fontSize: 14, lineHeight: 21, color: C.navy, textAlign: 'center' },
-  error: { flexDirection: 'row', gap: 8, backgroundColor: '#fdeaea', padding: 12, borderRadius: 14, alignItems: 'flex-start' },
+  input: { flex: 1, height: '100%', fontFamily: F.medium, fontSize: 15, color: C.text },
+  link: { fontFamily: F.dBold, fontSize: 13, color: C.text, textDecorationLine: 'underline' },
+  info: { fontFamily: F.medium, fontSize: 13, color: C.text, backgroundColor: C.secondary, padding: 12, borderRadius: 14, textAlign: 'center' },
+  explanation: { fontFamily: F.medium, fontSize: 14, lineHeight: 21, color: C.text, textAlign: 'center' },
+  error: { flexDirection: 'row', gap: 8, backgroundColor: C.dark ? '#3a1a1f' : '#fdeaea', padding: 12, borderRadius: 14, alignItems: 'flex-start' },
   errorTxt: { flex: 1, fontFamily: F.medium, fontSize: 13, color: C.destructive },
   orRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 40 },
   orLine: { flex: 1, height: 1, backgroundColor: C.border },
   or: { fontFamily: F.medium, fontSize: 13, color: C.mutedForeground },
-  google: { height: 54, borderRadius: 16, borderWidth: 1, borderColor: C.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
-  gMark: { fontFamily: F.dExtra, fontSize: 22, color: '#4285f4' },
-  googleTxt: { fontFamily: F.dBold, fontSize: 15, color: C.navy },
+  socialRow: { flexDirection: 'row', justifyContent: 'center', gap: 20 },
+  social: { width: 60, height: 60, borderRadius: 10, borderWidth: 1, borderColor: C.dark ? C.border : '#d9d9d9', alignItems: 'center', justifyContent: 'center', backgroundColor: C.card },
+  soon: { opacity: 0.4 },
+  socialNote: { fontFamily: F.medium, fontSize: 11, color: C.mutedForeground, textAlign: 'center', marginTop: -8 },
+  gMark: { fontFamily: F.dExtra, fontSize: 28, color: '#4285f4' },
   switchTxt: { fontFamily: F.medium, fontSize: 14, color: C.mutedForeground },
-  switchBold: { fontFamily: F.dBold, color: C.navy },
+  switchBold: { fontFamily: F.dBold, color: C.text },
   migration: { fontFamily: F.regular, fontSize: 11, lineHeight: 17, color: C.mutedForeground, textAlign: 'center' },
   guest: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 10 },
-  guestTxt: { fontFamily: F.dBold, fontSize: 14, color: C.navy },
-});
+  guestTxt: { fontFamily: F.dBold, fontSize: 14, color: C.text },
+}));

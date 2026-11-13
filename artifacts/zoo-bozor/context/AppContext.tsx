@@ -1,11 +1,14 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
 import { Text } from '@/components/LocalizedText';
 import { Alert } from '@/components/AppAlert';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Listing, SAMPLE_LISTINGS } from '@/constants/data';
 import { normalizePhone } from '@/constants/input';
-import { C, F } from '@/constants/colors';
+import { F } from '@/constants/colors';
+import { useTheme } from '@/context/ThemeContext';
 import { useSession } from '@/context/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -80,11 +83,27 @@ type Ctx = Stored & {
 
 const AppContext = createContext<Ctx | null>(null);
 
+/**
+ * What the user typed wins; empty fields are filled from the signed-in account
+ * (Google name, email, photo). Otherwise a profile saved before sign-in with an
+ * empty name would hide the account's name forever.
+ */
+function mergeProfile(seed: Partial<Profile> | undefined, saved: Partial<Profile> | undefined): Profile {
+  const merged: Profile = { ...EMPTY_PROFILE, ...seed };
+  for (const [key, value] of Object.entries(saved ?? {}) as [keyof Profile, string][]) {
+    if (typeof value === 'string' && value.trim()) merged[key] = value as never;
+  }
+  return merged;
+}
+
 export function AppProvider({ children, storageKey = KEY, initialProfile }: {
   children: React.ReactNode;
   storageKey?: string;
   initialProfile?: Partial<Profile>;
 }) {
+  const { C } = useTheme();
+  const insets = useSafeAreaInsets();
+  const [offlineDismissed, setOfflineDismissed] = useState(false);
   const [state, setState] = useState<Stored>(DEFAULTS);
   const [ready, setReady] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -122,7 +141,7 @@ export function AppProvider({ children, storageKey = KEY, initialProfile }: {
         if (!active) return;
         if (raw) {
           const parsed = JSON.parse(raw) as Partial<Stored>;
-          setState({ ...DEFAULTS, ...parsed, profile: { ...EMPTY_PROFILE, ...seedProfile.current, ...(parsed.profile ?? {}) }, prefs: { ...DEFAULTS.prefs, ...(parsed.prefs ?? {}) } });
+          setState({ ...DEFAULTS, ...parsed, profile: mergeProfile(seedProfile.current, parsed.profile), prefs: { ...DEFAULTS.prefs, ...(parsed.prefs ?? {}) } });
         } else {
           setState({ ...DEFAULTS, profile: { ...EMPTY_PROFILE, ...seedProfile.current } });
         }
@@ -143,7 +162,10 @@ export function AppProvider({ children, storageKey = KEY, initialProfile }: {
 
   const update = useCallback((fn: (s: Stored) => Stored) => setState((s) => fn(s)), []);
 
-  const remoteListings = useMemo(() => (listingsQuery.data ?? []).map((l) => ({
+  // A misconfigured API base URL can return an HTML page instead of JSON; never crash on it.
+  const listingsInvalid = listingsQuery.data !== undefined && !Array.isArray(listingsQuery.data);
+  const listingsFailed = listingsQuery.isError || listingsInvalid;
+  const remoteListings = useMemo(() => (Array.isArray(listingsQuery.data) ? listingsQuery.data : []).map((l) => ({
     ...l, own: l.ownerId === userId, localOnly: false,
   })), [listingsQuery.data, userId]);
   const importId = useCallback((id: string) => `import-${userId}-${id}`, [userId]);
@@ -155,8 +177,8 @@ export function AppProvider({ children, storageKey = KEY, initialProfile }: {
   const allListings = useMemo(() => [...remoteListings, ...localListings, ...SAMPLE_LISTINGS], [remoteListings, localListings]);
 
   const cacheSaved = useCallback((saved: ListingRecord) => {
-    queryClient.setQueryData<ListingRecord[]>(getListListingsQueryKey(), (rows = []) => [
-      saved, ...rows.filter((r) => r.id !== saved.id),
+    queryClient.setQueryData<ListingRecord[]>(getListListingsQueryKey(), (rows) => [
+      saved, ...(Array.isArray(rows) ? rows : []).filter((r) => r.id !== saved.id),
     ]);
     void queryClient.invalidateQueries({ queryKey: getListListingsQueryKey() });
   }, [queryClient]);
@@ -190,7 +212,7 @@ export function AppProvider({ children, storageKey = KEY, initialProfile }: {
     const item = remoteListings.find((l) => l.id === id);
     if (!item?.own) throw new Error('Faqat hisobingizga tegishli, serverdagi eʼlonni oʻchira olasiz.');
     await removeListing(id);
-    queryClient.setQueryData<ListingRecord[]>(getListListingsQueryKey(), (rows = []) => rows.filter((r) => r.id !== id));
+    queryClient.setQueryData<ListingRecord[]>(getListListingsQueryKey(), (rows) => (Array.isArray(rows) ? rows : []).filter((r) => r.id !== id));
     update((s) => ({
       ...s, favorites: s.favorites.filter((x) => x !== id),
       conversations: s.conversations.filter((c) => c.listingId !== id),
@@ -205,7 +227,7 @@ export function AppProvider({ children, storageKey = KEY, initialProfile }: {
       ready,
       allListings,
       listingsLoading: listingsQuery.isLoading,
-      listingsError: listingsQuery.isError,
+      listingsError: listingsFailed,
       refreshListings: () => { void listingsQuery.refetch(); },
       getListing: (id) => allListings.find((l) => l.id === id),
       toggleFavorite: (id) =>
@@ -253,26 +275,39 @@ export function AppProvider({ children, storageKey = KEY, initialProfile }: {
             .filter((c) => c.messages.length > 0),
         })),
       setPrefs: (p) => update((s) => ({ ...s, prefs: { ...s.prefs, ...p } })),
-      resetAll: () => setState(DEFAULTS),
+      resetAll: () => setState((s) => ({ ...DEFAULTS, prefs: s.prefs })),
     }),
-    [state, ready, allListings, myListings, update, saveListing, deleteListing, listingsQuery.isLoading, listingsQuery.isError, listingsQuery.refetch],
+    [state, ready, allListings, myListings, update, saveListing, deleteListing, listingsQuery.isLoading, listingsFailed, listingsQuery.refetch],
   );
 
   if (!ready) return (
     <View style={{ flex: 1, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 16 }}>
       {loadError ? <>
-        <Text style={{ fontFamily: F.medium, color: C.navy, textAlign: 'center' }}>Saqlangan maʼlumotlarni oʻqib boʻlmadi. Ular oʻchirilmagan.</Text>
-        <Pressable onPress={() => setAttempt((n) => n + 1)} accessibilityRole="button"><Text style={{ fontFamily: F.bold, color: C.navy }}>Qayta urinish</Text></Pressable>
-      </> : <ActivityIndicator color={C.navy} />}
+        <Text style={{ fontFamily: F.medium, color: C.text, textAlign: 'center' }}>Saqlangan maʼlumotlarni oʻqib boʻlmadi. Ular oʻchirilmagan.</Text>
+        <Pressable onPress={() => setAttempt((n) => n + 1)} accessibilityRole="button"><Text style={{ fontFamily: F.bold, color: C.text }}>Qayta urinish</Text></Pressable>
+      </> : <ActivityIndicator color={C.text} />}
     </View>
   );
   return <AppContext.Provider value={value}>
-    {listingsQuery.isError ? <View style={{ backgroundColor: C.lime, padding: 12 }}>
-      <Text style={{ fontFamily: F.medium, color: C.navy }}>Umumiy eʼlonlarni yuklab boʻlmadi. Quyidagi maʼlumotlar eskirgan boʻlishi mumkin.</Text>
-      <Pressable onPress={() => { void listingsQuery.refetch(); }} accessibilityRole="button" testID="retry-listings"><Text style={{ fontFamily: F.bold, color: C.navy }}>Qayta urinish</Text></Pressable>
-    </View> : null}
-    {guestError ? <Text style={{ color: C.destructive, padding: 12 }}>Mehmon eʼlonlarini oʻqib boʻlmadi. Ular oʻchirilmagan.</Text> : null}
-    {children}
+    <View style={{ flex: 1 }}>
+      {guestError ? <Text style={{ color: C.destructive, padding: 12, paddingTop: insets.top + 8 }}>Mehmon eʼlonlarini oʻqib boʻlmadi. Ular oʻchirilmagan.</Text> : null}
+      {children}
+      {/* Server unreachable: a small toast above the tab bar (not a banner under the status bar). */}
+      {listingsFailed && !offlineDismissed ? (
+        <View pointerEvents="box-none" style={{ position: 'absolute', left: 16, right: 16, bottom: Math.max(insets.bottom, 12) + 86, alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, maxWidth: 420, backgroundColor: C.navy, borderRadius: 14, paddingVertical: 10, paddingLeft: 14, paddingRight: 8, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10, elevation: 6 }} testID="offline-toast">
+            <Feather name="wifi-off" size={16} color={C.lime} />
+            <Text style={{ flex: 1, fontFamily: F.medium, fontSize: 12, lineHeight: 16, color: C.white }}>Server bilan bogʻlanib boʻlmadi. Namuna eʼlonlar koʻrsatilmoqda.</Text>
+            <Pressable onPress={() => { void listingsQuery.refetch(); }} hitSlop={6} accessibilityRole="button" testID="retry-listings">
+              <Text style={{ fontFamily: F.bold, fontSize: 12, color: C.lime }}>Qayta urinish</Text>
+            </Pressable>
+            <Pressable onPress={() => setOfflineDismissed(true)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Yopish" testID="dismiss-offline">
+              <Feather name="x" size={16} color={C.white} />
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
+    </View>
   </AppContext.Provider>;
 }
 

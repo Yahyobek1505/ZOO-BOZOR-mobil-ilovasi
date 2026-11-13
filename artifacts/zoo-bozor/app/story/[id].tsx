@@ -1,14 +1,17 @@
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Text } from '@/components/LocalizedText';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
-import { C, F } from '@/constants/colors';
+import { F } from '@/constants/colors';
+import { makeStyles, useTheme } from '@/context/ThemeContext';
 import { STORIES } from '@/constants/data';
 import { useBottomInset, useTopInset } from '@/components/ui';
 
 export default function Story() {
+  const { C } = useTheme();
+  const st = useSt();
   const { id } = useLocalSearchParams<{ id: string }>();
   const top = useTopInset();
   const bottom = useBottomInset();
@@ -37,14 +40,14 @@ export default function Story() {
           <Feather name="chevron-left" size={22} color={C.white} />
         </Pressable>
         <Pressable onPress={next} style={[st.navBtn, { backgroundColor: C.lime }]} accessibilityLabel="Keyingi">
-          <Feather name={i === STORIES.length - 1 ? 'check' : 'chevron-right'} size={22} color={C.navy} />
+          <Feather name={i === STORIES.length - 1 ? 'check' : 'chevron-right'} size={22} color={C.ink} />
         </Pressable>
       </View>
     </View>
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((C) => ({
   bars: { position: 'absolute', left: 16, right: 16, flexDirection: 'row', gap: 4, zIndex: 2 },
   bar: { flex: 1, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.3)' },
   close: { position: 'absolute', right: 16, zIndex: 2, padding: 6 },
@@ -53,4 +56,4 @@ const st = StyleSheet.create({
   text: { fontFamily: F.regular, fontSize: 16, color: C.white, opacity: 0.85, textAlign: 'center', lineHeight: 24 },
   nav: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 24 },
   navBtn: { width: 54, height: 54, borderRadius: 27, backgroundColor: C.navySoft, alignItems: 'center', justifyContent: 'center' },
-});
+}));

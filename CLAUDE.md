@@ -1,0 +1,82 @@
+# ZOO-BOZOR — Claude uchun qoidalar
+
+## Loyiha
+O'zbekistondagi hayvonlar va uy hayvonlari mahsulotlari uchun e'lonlar ilovasi (mobil + web).
+Foydalanuvchilar: hayvon sotuvchi va oluvchi oddiy odamlar; asosiy til o'zbekcha, ru/en tarjimalari bor.
+Batafsil arxitektura va avvalgi qarorlar: `replit.md`.
+
+## Uslub
+- Dizayn manbai — Figma fayli (`8CDKhxn3Jozy83aPQ6m8kV`). O'zimcha yangi ko'rinish o'ylab topma.
+- Ranglar faqat `constants/colors.ts` palitrasidan, komponent ichida `const { C } = useTheme()` va `const st = useSt()` (`makeStyles((C) => ({...}))`, `context/ThemeContext.tsx`) orqali. Statik `C` eksporti yo'q. Tokenlar: `text` (matn), `surface` (sahifa), `card`, `subtle`, `navy` (to'q ko'k fon — ustida `white`), `ink` (lime ustidagi matn), `C.dark` (tungi rejimmi). Yangi ekranlarda `C.navy` ni matn uchun, `C.white` ni karta foni uchun ishlatma.
+- Matnlar o'zbekcha, to'g'ri imlo bilan (oʻ, gʻ, ʼ); yangi matnga ru/en tarjima qo'sh (`constants/translations.ts`).
+- Oddiylik: kerakli narsani qil, ortiqcha abstraksiya va "keyin kerak bo'lar" kodi yo'q.
+- Ulanmagan xizmatni (SMS, to'lov, xabar yuborish) hech qachon "ishlayapti" deb ko'rsatma.
+
+## Texnik chegaralar
+- pnpm workspace: `artifacts/zoo-bozor` (Expo + expo-router, web ham), `artifacts/api-server` (Express 5), Neon Postgres + Drizzle.
+- Kirish faqat Firebase orqali; Clerk'ni qaytarma.
+- Yangi kutubxona qo'shishdan oldin so'ra; mavjud vositalar bilan hal qilishga harakat qil.
+- Har xil telefon kengligida (320–480 px) ishlashi shart; web'da ustun kengligi `useScreenWidth()` dan olinadi.
+- O'zgarishdan keyin `pnpm run typecheck` va `node --test "artifacts/zoo-bozor/tests/*.test.mjs"` toza (papka yo'li Windows'da ishlamaydi) bo'lishi kerak.
+
+## Ish qoidalari
+- Katta ishni boshlashdan oldin qisqa reja ko'rsat va tasdiqni kut.
+- Kichik qadamlar bilan ishla, har qadamdan keyin tekshir (typecheck, brauzerda ko'rish).
+- So'ralmaguncha commit qilma.
+- Parol, kalit, token va `DATABASE_URL` ni hech qachon faylga, chatga yoki logga yozma.
+- Javoblar o'zbek tilida: nima qilindi, nima tekshirildi, nima qoldi.
+- Har sezilarli ishdan keyin quyidagi "Ish jurnali"ni yangila (sana, nima, qayerda, nima qoldi). Qisqa yoz.
+
+## Ish jurnali (Claude o'zi uchun)
+
+### Muhit va tuzoqlar
+- Preview: `.claude/launch.json` → `zoo-bozor-web` (8082, `CI=1`, kod o'zgargach serverni qayta ishga tushir), `api-server` (5000, `dist/index.mjs` — avval build).
+- Foydalanuvchi uchun: `pnpm dev` (repo ildizi, `scripts/dev-all.mjs`) API server (5000) va Expo web (8082) ni birga ko'taradi. Faqat Expo ishlasa: e'lonlar "Server bilan bogʻlanib boʻlmadi" xabari bilan namuna bo'ladi va Google kirishdan keyin hisob ochilmaydi (sessiya API'da).
+- Brauzer paneli yashirin bo'lsa rAF, ResizeObserver, scroll ishlamaydi; Google popup faqat foydalanuvchi bosganda ochiladi.
+- Onboarding o'tkazish: localStorage `zoo-bozor/onboarding/v1=complete`, aks holda `/welcome` ga otadi.
+- Figma MCP: Starter tarif limiti tugagan (2026-11). O'lchamlarni `design-reference/*.png` dan ol (Python/PIL).
+- Python skriptlarni bash heredoc'da emas, scratchpad faylida ishga tushir (heredoc buziladi).
+
+### Bajarilgan (2026-11-12 gacha, commit qilinmagan)
+- Figma'ga moslash: bosh sahifa 2 ustunli grid (`GUTTER=7`, `cardW=Math.floor((w-40-7)/2)`), "Tavsiya qilamiz" paneli, "Xafta sotuvi" paneli, Cats promo; auksion banneri olib tashlangan. `ListingCard`/`SaleCard`/`CardFooter`/`compactViews` — `components/ui.tsx`.
+- Market, saved, listings gridlari ham `Math.floor` kenglik + `space-between`. Bosh va Market karusellari avtomatik aylanadi.
+- Web kenglik: `app/_layout.tsx` dagi `PhoneFrame` ustunni ResizeObserver bilan o'lchaydi → `ScreenWidthContext` → `useScreenWidth()` (`hooks/useScreen.ts`). Sabab: oyna ustundan keng bo'lsa kartalar 1 ustunga tushardi.
+- Firebase kirish: web `signInWithPopup`, native `/google-auth` ko'prigi. Kirishdan keyingi yo'nalish `AuthContext` da (`setPostLoginRoute`/`takePostLoginRoute`, `safeAppRoute`), chunki `AppProvider` accountId bo'yicha qayta mount bo'ladi. `/login?next=...` ishlaydi. Server tomoni tekshirilgan (sessiya 200, DB'da `firebase_` akkaunt).
+- Profil: "Hisob maʼlumotlari" (ism, email + Tasdiqlangan, kirish usuli, sanalar) va "Shaxsiy maʼlumotlar" guruhlari — `app/(tabs)/profile.tsx`. `AppContext.mergeProfile` bo'sh maydonlarni Google ma'lumotidan to'ldiradi.
+- Tarjimalar (uz/ru/en) `constants/translations.ts`; o'zgarmas so'zlar `tests/localization.test.mjs` dagi `unchangedData` da.
+- Neon DB ulangan; `DATABASE_URL` ni foydalanuvchi o'zi yozgan.
+- 2026-11-12 Hamyon: soxta 530.000 balans, soxta tranzaksiyalar va "Toʻlov qabul qilindi" o'rniga — balans `0` (wallet, profil, my-listings), bo'sh tarix izohi, provayderlar "Tez orada" + "Toʻlov hali ulanmagan" alerti. To'lov API ulanganda `wallet.tsx` dagi `BALANCE`/`TRANSACTIONS` ni serverdan olish kerak.
+
+- 2026-11-12 Figma tartibi, 1-bo'lim — Savdo tabi: 4-tab endi `app/(tabs)/savdo.tsx` (navy sarlavha "SAVDO", oy = tema tugmasi → hozircha "tez orada" alerti, tishli g'ildirak → /settings; Kutilayotgan/Yakunlangan; ikkalasi bo'sh holat, chunki auksion backend yo'q). Rasm: `assets/figma/savdo-empty.png`. E'lonlar katalogi `app/listings.tsx` ga ko'chdi (stack, orqaga tugmali), `/listings` havolalari ishlaydi. `app/auction.tsx` (soxta stavkali demo) hech qayerdan ochilmaydi — backend bo'lganda Figma qorong'i dizayni bo'yicha qayta qilish kerak.
+- 2026-11-12 2-bo'lim — Mahsulot tafsiloti (`app/product/[id].tsx`) Figma "8-Mahsulot" bo'yicha: oq hero, ostidan panel, navy narx + "Aksiyada" (oldPrice bo'lsa, eski narx chizilgan), "Asosiy maʼlumotlar" jadvali (yangi `Product.pet` maydoni = "Kim uchun"), tavsif, sotuvchi ("ZOO-BOZOR Market / Namuna katalog"), ID + Shikoyat. Pastki shisha tugmalar savatni boshqaradi (sotuvchi yo'q, Yozish/Qo'ng'iroq o'rniga). Topshirish, xarita va kattalashtirish qo'shilmadi — mahsulotda manzil/yetkazish ma'lumoti yo'q. `components/GlassAction.tsx` umumiy (hayvon sahifasi ham ishlatadi).
+- 2026-11-12 3-bo'lim — Hayvon tafsiloti (`app/listing/[id].tsx`): hero ikonkalari fon'siz oq (soya bilan), yurak lime; o'ng pastda kattalashtirish tugmasi → to'liq ekran `Modal` ko'ruvchi (suriladi); emlanganlik kartasida oq `medkit`; Figma'da yo'q telefon kartasi olib tashlandi (qo'ng'iroq pastki tugmada); "Joylashuv"da statik mini xarita `components/MiniMap.tsx` (OSM plitkalari, zoom 14, "© OpenStreetMap"). "Profil >" sotuvchi uchun 6-bo'limda qilinadi.
+- 2026-11-12 4-bo'lim — Karta (`app/(tabs)/map.tsx`): navy "Karta" sarlavhasi (+ "N ta eʼlon", xat → /messages, filtr tugmasi); "Xarita filtrlari" oynasi: Barchasi/Hayvonlar, Doʻkonlar/Veterinar o'chiq "Tez orada" (katalog yo'q), qidiruv markazi (Turgan joyim / Toshkent markazi; joylashuv rad etilsa Toshkent), radius 3/5/20/∞ km — haqiqiy masofa filtri (haversine) va zoom. Belgilar Figma'dagidek: lime halqali rasm + oq narx yorlig'i + lime uch (`components/map-document.ts`, `view` prop qo'shildi). Do'kon/veterinar ma'lumot kartalari qilinmadi — ma'lumot yo'q.
+- Tarjima qo'shish: scratchpad `tr_add.py rows.json` ([[uz,en,ru],...]).
+- 2026-11-12 5-bo'lim — E'lon joylash (`app/listing/edit.tsx`): yangi e'lon avval Figma "Yangi eʼlon / Nima joylamoqchisiz?" (`TypeStep`) — "Hayvon eʼloni" formaga o'tadi, "Ozuqa va Buyumlar" "Tez orada" (mahsulot e'lonlari uchun backend modeli yo'q). Joylangandan keyin `DoneStep` (Figma "Tekshiruvda" maketi, lekin matn "Eʼlon joylandi" — moderatsiya yo'q, e'lon darhol chiqadi); tahrirlashda avvalgidek e'lon sahifasiga qaytadi. Rasmlar: `assets/figma/post-type|post-animal|post-goods|post-done.png`. DoneStep brauzerda ko'rilmagan (haqiqiy e'lon yaratish kerak edi).
+- 2026-11-12 6-bo'lim — Sotuvchi profili `app/seller/[id].tsx` (Figma "Profil 08"): id = `ownerId`, namuna e'lonlar uchun `SAMPLE_SELLER='sample'` (`sellerKey()` — `constants/data.ts`). Navy karta: ism, "Sotuvchi" + eng ko'p shahar, e'lonlar soni, o'rtacha reyting, qisqa ID; "Eʼlonlar / Buyumlar" (Buyumlar bo'sh holat); pastda Yozish/Qo'ng'iroq. "Yaqinda: 17:00" (onlayn holat) va tavsif matni qo'shilmadi — ma'lumot yo'q. Hayvon sahifasidagi "Profil >" endi shu sahifaga olib boradi (o'z e'loni → /profile).
+- 2026-11-12 7-bo'lim — Profil tablari (`app/(tabs)/profile.tsx`): Maʼlumotlarim / Eʼlonlar tahlili / Monitoring (MCI ikonkalar). Eʼlonlar tahlili — Figma qatorlari (rasm, nom, narx, shahar, "⋯" → Koʻrish/Tahrirlash), holat belgisi "Joylangan" (yashil) yoki "Faqat qurilmada" — moderatsiya yo'qligi uchun Kutilmoqda/Rad etildi yo'q. Monitoring — bo'sh holat (to'lov ulanmagan). "Boshqalar" menyusi olib tashlandi (Figma'da yo'q; sozlamalar BrandHeader menyusi va Savdo tishli g'ildiragida). Chiqish oynasi: lime "Bekor qilish" + qizil "Chiqish", oq xira fon (`components/SignOutButton.tsx`) — kirgan hisob bilan sinalmagan. Pastki yozuv "faqat shu qurilmada saqlanadi" qoldirildi (Figma'dagi "himoyalangan" da'vosi o'rniga).
+- 2026-11-12 8-bo'lim — Xabarlar (`app/messages/index.tsx`) va chat (`app/messages/[id].tsx`): navy sarlavhalar (25 radius), Figma ochiladigan menyulari umumiy `components/PopupMenu.tsx`. Soxta suhbatlar (Mahkamov va b.), "Oʻqilmagan +N" va "Koʻp tanlash faollashdi / Bildirishnomalar yoqilgan" soxta xabarlari olib tashlandi — ro'yxatda faqat shu qurilmadagi qoralamalar. Chat: lime qo'ng'iroq (haqiqiy raqam bo'lsa), menyu Profilni koʻrish/Shikoyat/Bloklash/Suhbatni oʻchirish (Shikoyat va Bloklash "ulanmagan" alerti), bo'sh holat "Yozishmalar hozircha yoʻq", e'lon kartasi + qog'oz qisqich (alert) va yuborish tugmalari; xabarlar "Qoralama · yuborilmagan". Menyuda "Suhbatni tanlash" yo'q (ko'p tanlash qilinmagan).
+- `tr_add.py` endi mavjud kalitlarni o'tkazib yuboradi (takroriy kalit TS xatosi beradi).
+- 2026-11-12 9-bo'lim — Market: `BrandHeader` menyusi Alert o'rniga Figma oq ochiladigan oynasi (`PopupMenu`), ochiq paytda menyu belgisi lime. Bandlar: Savdo shartlari (alert: to'lov/topshirish sotuvchi va xaridor o'rtasida, oldindan pul o'tkazmang), Yordam → /settings, Mening eʼlonlarim, Saqlanganlar, Sozlamalar va til (oxirgi uchtasi Figma'da yo'q, lekin sozlamalarga yo'l kerak). Mahsulot kartasidagi savat belgisi: shaffof doira + lime `BasketIcon` (`components/ui.tsx`). Fold banneri va Xafta sotuvi avvaldan bor edi. Bosh sahifa, E'lonlar menyusi ham shu header'dan foydalanadi.
+- 2026-11-12 Tuzatildi: `ListingCard`/`ProductCard` (`components/ui.tsx`) — tashqi `View` ichida karta `Pressable` va yurak/savat tugmalari yonma-yon (absolute: listing yurak 14/14, product yurak 12/12, savat top 12 right 44). Endi web'da "button ichida button" yo'q (bosh, market, karta, savdo, profil, e'lonlar, sotuvchi, e'lon, chat sahifalarida DOM bilan tekshirildi). Yangi kartalarda ham ichma-ich `Pressable` qilma.
+- 2026-11-12 10-bo'lim — Kirish (`app/login.tsx`): keng Google tugmasi o'rniga Figma'dagi 3 ta 60×60 kvadrat (telefon, Google, Apple; x=91/171/251 — Figma bilan bir xil). Telefon (SMS) va Apple ulanmagan: xira (opacity 0.4) + bosilsa "hali ulanmagan" alerti, ostida "Telefon va Apple ID orqali kirish tez orada". Mehmon havolasida MCI `ghost` belgisi. Ro'yxatdan o'tish havolasi va migratsiya izohi qoldi. SMS tasdiqlash ekranlari (tasdiqlash.png / xatolik) SMS ulanmaguncha qilinmaydi.
+- 2026-11-12 11-bo'lim — Savat (`app/cart.tsx`) Figma "Rasmilashtirish": Qabul qilish (Yetkazib berish/Olib ketish — faqat ko'rinish), profil manzili/F.I.O/telefon + "Manzilni tahrirlash", mahsulotlar navy +/− bilan va "N so'm / dona", To'lov usuli ro'yxati xira "tez orada", Buyurtmalar hisobi (yetkazish "Sotuvchi bilan kelishiladi"), "Buyurtma berish" → "ulanmagan" alerti. Karta raqami formasi qo'shilmadi (to'lov yo'q, karta ma'lumotini yig'maymiz). Hamyon "Toʻldirish" oynasi Figma "To'lov Usuli" ro'yxati: Bank kartasi, Click, Payme, Uzum, TBS, AVO — hammasi "tez orada", ro'yxat suriladi (320×700 da "Yopish" kesilmasin). To'ldirish summasi / Admin tasdig'i / chek oynalari to'lov ulanmaguncha qilinmaydi.
+- Figma rejasidagi 11 bo'lim tugadi (2026-11-12).
+- 2026-11-12 Tungi tema: `ThemeProvider` (`app/_layout.tsx` ildizida, tanlov `zoo-bozor/theme/v1` AsyncStorage'da, standart kunduzgi), Savdo oy tugmasi (tungi rejimda lime quyosh) va Sozlamalardagi "Tungi rejim" almashtirgichi. Barcha 41 fayl `useTheme`/`makeStyles` ga o'tkazildi; `LocalizedText` ichidagi `Text`/`TextInput` standart rangi `C.text` (ichma-ich Text ota rangini oladi). Xarita HTML hujjatlari (`*-map-document.ts`) kunduzgi palitrada qoladi. Oq fonli rasmlar (`savdo-empty`, `post-type`, `post-done`, `login-illustration-2`) chetidan shaffof qilindi (asl nusxalar scratchpad `backup/` da edi). `my-listings.tsx` dagi Kutilmoqda/Tasdiqlandi filtrlari moderatsiya bo'lmasa ham ko'rinadi — keyin ko'rib chiqish kerak.
+
+- 2026-11-13 Navigatsiya qulayligi (Figma'ni buzmaydigan): tema endi 3 xil — `system` (standart, telefon sozlamasiga ergashadi, `useColorScheme`), `light`, `dark`; Sozlamalarda "Ilova koʻrinishi" guruhi (Telefon boʻyicha / Kunduzgi / Tungi). Savdo oy tugmasi joriy ko'rinishni teskarisiga aniq tanlov sifatida o'zgartiradi. Profil sarlavhasiga Sozlamalar (tishli g'ildirak, `profile-settings`) qo'shildi. Profildagi 2-tab nomi "Mening eʼlonlarim", ichidagi tugma "Barcha eʼlonlarim". `my-listings.tsx` dagi soxta "1.82K" o'rniga "Koʻrishlar" — e'lonlar `views` yig'indisi.
+- Taklif qilingan, lekin qilinmagan (Figma'dan chetga chiqadi, foydalanuvchi qarori kerak): tab belgilari ostiga yozuv; auksion serveri bo'lmaguncha 4-tabda e'lonlar ro'yxati.
+
+- 2026-11-13 Foydalanuvchi xatolari: (1) tepadagi sariq "Umumiy eʼlonlarni yuklab boʻlmadi" — sabab API server (5000) ishlamagani; o'rniga tab panel ustida yopiladigan navy xabar (`offline-toast`, `context/AppContext.tsx`). (2) Google: hisob sessiyasi API'da bo'lgani uchun server o'chiq bo'lsa "Hisobingizga tegishli..." xatosi — endi "Server bilan bogʻlanib boʻlmadi" deb tushuntiradi, xato sahifasi bezatildi (`_layout.tsx`); popup to'silsa `signInWithRedirect` ga o'tadi, ramka (iframe/simulyator) ichida bo'lsa alohida oynada ochishni so'raydi (`lib/google-sign-in.web.ts`, `finishGoogleRedirect` AuthContext'da). (3) Gorizontal qatorlar (bosh: kategoriyalar, hikoyalar, Xafta sotuvi; Market Xafta sotuvi; e'londagi o'xshashlar) `components/AutoScrollRow.tsx` — ~22 px/s cheksiz sekin aylanish (ikkinchi nusxa aria-hidden), tegilganda/sichqoncha ustida pauza; web'da o'lcham DOM'dan ham o'qiladi (yashirin panelda onLayout ishlamaydi). Aylantirish chizig'i web'da 20px ortiqcha balandlik + `overflow:hidden` bilan yashirildi (`hiddenBar*`, AutoCarousel va e'lonlar chiplari ham). Qidiruv inputida `outlineStyle: 'none'`.
+
+- 2026-11-13 Kartalar gridlari `components/CardGrid.tsx` ga o'tdi (bosh, Market, Saqlangan, sotuvchi; E'lonlar FlatList'da `flex:1` katak + toq bo'lsa bo'sh katak): har karta qatorning yarmi (`flex:1`), piksel kenglik hisoblanmaydi. Sabab: foydalanuvchi simulyatorida vertikal aylantirish chizig'i ~10px olib, ikkinchi karta pastga tushardi. 402 px'da karta 177.5 (Figma 178), 290 px'da 122, sun'iy 14px chiziq bilan ham 2 ustun. Global scrollbar CSS `!important` qilindi (`app/_layout.tsx`).
+
+### Figma eksportlari (`design-reference/`, 2026-11-12)
+- 41 PNG: splash, til tanlash, kirish, SMS (tasdiqlash/xatolik), bosh, market, hayvon va mahsulot tafsiloti, saqlangan, karta (4), xabarlar + chat (3), profil (01–09), "16-To'lov usuli*" (aslida e'lon joylash qadamlari + Savdo/auksion ekranlari).
+- Tema tugmasi: Savdo sahifalari sarlavhasida oy + tishli g'ildirak belgisi (`16-To'lov usuli-4/7/8.png`).
+- Uzun rasmlarni bo'lib ko'rish: PIL bilan 1748 px bo'laklarga kes (scratchpad).
+
+### Qolgan ishlar
+- Native (telefon) Google login hali sinalmagan.
+- SMS tasdiqlash ekranlari (Yuklanmalar `ZOO BOZOR.zip`, "iPhone 16 & 17 Pro - 13/14").
+- `wallet.tsx` dagi kvitansiya oynasi ("Chek saqlandi", "Havola nusxalandi" soxta xabarlari) hozir ochilmaydi (tarix bo'sh); to'lov ulanganda haqiqiy qilish kerak.

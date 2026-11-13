@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, View } from 'react-native';
 import { Text } from '@/components/LocalizedText';
 import { Feather } from '@expo/vector-icons';
-import { C, F } from '@/constants/colors';
+import { F } from '@/constants/colors';
+import { makeStyles, useTheme } from '@/context/ThemeContext';
 import { useBottomInset, useTopInset } from '@/components/ui';
 
 /** Navy curved-bottom header used by Figma posting/editing screens. */
 export function CurvedHeader({ title, onBack, right }: { title: string; onBack: () => void; right?: React.ReactNode }) {
+  const { C } = useTheme();
+  const k = useK();
   const top = useTopInset();
   return (
     <View style={[k.header, { paddingTop: top + 14 }]}>
@@ -20,6 +23,8 @@ export function CurvedHeader({ title, onBack, right }: { title: string; onBack: 
 }
 
 export function HeaderAction({ label, onPress, testID }: { label: string; onPress: () => void; testID?: string }) {
+  const { C } = useTheme();
+  const k = useK();
   return (
     <Pressable onPress={onPress} hitSlop={10} accessibilityRole="button" accessibilityLabel={label} testID={testID}>
       <Text style={k.action}>{label}</Text>
@@ -28,6 +33,8 @@ export function HeaderAction({ label, onPress, testID }: { label: string; onPres
 }
 
 export function StepDots({ step, total = 3 }: { step: number; total?: number }) {
+  const { C } = useTheme();
+  const k = useK();
   return (
     <View style={k.dots} accessibilityLabel={`${step + 1}-qadam, jami ${total}`}>
       {Array.from({ length: total }).map((_, i) => (
@@ -43,10 +50,12 @@ export function StepDots({ step, total = 3 }: { step: number; total?: number }) 
 }
 
 export function Label({ text, required }: { text: string; required?: boolean }) {
+  const k = useK();
   return <Text style={k.label}>{text}{required ? ' *' : ''}</Text>;
 }
 
 export function Hint({ text, error }: { text?: string; error?: string }) {
+  const k = useK();
   if (error) return <Text style={k.err}>{error}</Text>;
   return text ? <Text style={k.hint}>{text}</Text> : null;
 }
@@ -58,6 +67,8 @@ export function Select({ label, required, value, options, onChange, placeholder 
   label?: string; required?: boolean; value: string; options: Option[]; onChange: (v: string) => void;
   placeholder?: string; error?: string; hint?: string; testID?: string; center?: boolean;
 }) {
+  const { C } = useTheme();
+  const k = useK();
   const [open, setOpen] = useState(false);
   const bottom = useBottomInset();
   const current = options.find((o) => o.value === value);
@@ -74,7 +85,7 @@ export function Select({ label, required, value, options, onChange, placeholder 
         <Text style={[k.selectTxt, !current && { color: C.mutedForeground }, center && { textAlign: 'center' }]} numberOfLines={1}>
           {current?.label ?? placeholder}
         </Text>
-        <View style={k.chev}><Feather name="chevron-down" size={16} color={C.navy} /></View>
+        <View style={k.chev}><Feather name="chevron-down" size={16} color={C.text} /></View>
         {Platform.OS === 'web' ? (
           <select
             aria-label={label ?? placeholder}
@@ -106,8 +117,8 @@ export function Select({ label, required, value, options, onChange, placeholder 
                   accessibilityState={{ selected: on }}
                   testID={testID ? `${testID}-${o.value}` : undefined}
                 >
-                  <Text style={k.optTxt}>{o.label}</Text>
-                  {on ? <Feather name="check" size={18} color={C.navy} /> : null}
+                  <Text style={[k.optTxt, on && { color: C.ink }]}>{o.label}</Text>
+                  {on ? <Feather name="check" size={18} color={C.ink} /> : null}
                 </Pressable>
               );
             })}
@@ -122,6 +133,8 @@ export function Select({ label, required, value, options, onChange, placeholder 
 export function Tile({ label, icon, active, onPress, testID }: {
   label: string; icon?: keyof typeof Feather.glyphMap; active: boolean; onPress: () => void; testID?: string;
 }) {
+  const { C } = useTheme();
+  const k = useK();
   return (
     <Pressable
       onPress={onPress}
@@ -131,8 +144,8 @@ export function Tile({ label, icon, active, onPress, testID }: {
       accessibilityLabel={label}
       testID={testID}
     >
-      {icon ? <Feather name={icon} size={18} color={C.navy} /> : null}
-      <Text style={k.tileTxt}>{label}</Text>
+      {icon ? <Feather name={icon} size={18} color={active ? C.ink : C.text} /> : null}
+      <Text style={[k.tileTxt, active && { color: C.ink }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -141,6 +154,8 @@ export function PillButton({ label, onPress, variant = 'navy', icon = 'arrow-rig
   label: string; onPress: () => void; variant?: 'navy' | 'outline' | 'green'; icon?: keyof typeof Feather.glyphMap | null;
   disabled?: boolean; testID?: string; flex?: boolean;
 }) {
+  const { C } = useTheme();
+  const k = useK();
   const outline = variant === 'outline';
   return (
     <Pressable
@@ -149,7 +164,7 @@ export function PillButton({ label, onPress, variant = 'navy', icon = 'arrow-rig
       style={({ pressed }) => [
         k.pill,
         variant === 'green' && { backgroundColor: '#3a9b22' },
-        outline && { backgroundColor: C.white, borderWidth: 1, borderColor: '#cfd2da' },
+        outline && { backgroundColor: C.card, borderWidth: 1, borderColor: C.dark ? C.border : '#cfd2da' },
         flex && { flex: 1 },
         (pressed || disabled) && { opacity: disabled ? 0.5 : 0.85, transform: [{ scale: 0.985 }] },
       ]}
@@ -159,41 +174,42 @@ export function PillButton({ label, onPress, variant = 'navy', icon = 'arrow-rig
       testID={testID}
     >
       {outline && icon ? <View style={[k.pillIcon, { backgroundColor: '#6b6f7a' }]}><Feather name={icon} size={13} color={C.white} /></View> : null}
-      <Text style={[k.pillTxt, outline && { color: C.navy }]}>{label}</Text>
-      {!outline && icon ? <View style={[k.pillIcon, variant === 'green' && { backgroundColor: C.white }]}><Feather name={icon} size={13} color={variant === 'green' ? '#3a9b22' : C.navy} /></View> : null}
+      <Text style={[k.pillTxt, outline && { color: C.text }]}>{label}</Text>
+      {!outline && icon ? <View style={[k.pillIcon, variant === 'green' && { backgroundColor: C.white }]}><Feather name={icon} size={13} color={variant === 'green' ? '#3a9b22' : C.ink} /></View> : null}
     </Pressable>
   );
 }
 
-export const kit = StyleSheet.create({
-  input: { height: 48, borderRadius: 12, borderWidth: 1, borderColor: '#d9dce3', backgroundColor: C.white, paddingHorizontal: 16, fontFamily: F.semibold, fontSize: 15, color: C.navy },
-});
+/** Shared form input style; call inside the component: `const kit = useKit()`. */
+export const useKit = makeStyles((C) => ({
+  input: { height: 48, borderRadius: 12, borderWidth: 1, borderColor: C.dark ? C.border : '#d9dce3', backgroundColor: C.card, paddingHorizontal: 16, fontFamily: F.semibold, fontSize: 15, color: C.text },
+}));
 
-const k = StyleSheet.create({
+const useK = makeStyles((C) => ({
   header: { backgroundColor: C.navy, borderBottomLeftRadius: 34, borderBottomRightRadius: 34, paddingHorizontal: 20, paddingBottom: 22, flexDirection: 'row', alignItems: 'center' },
   side: { width: 80 },
   title: { flex: 1, textAlign: 'center', fontFamily: F.dBold, fontSize: 17, color: C.white },
   action: { fontFamily: F.dBold, fontSize: 15, color: C.lime },
   dots: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', marginTop: 12 },
-  dot: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#dcdde2', alignItems: 'center', justifyContent: 'center' },
+  dot: { width: 16, height: 16, borderRadius: 8, backgroundColor: C.dark ? C.border : '#dcdde2', alignItems: 'center', justifyContent: 'center' },
   dotNow: { width: 20, height: 20, borderRadius: 10 },
-  dotCore: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.navy },
-  line: { width: 54, height: 4, backgroundColor: '#dcdde2' },
-  label: { fontFamily: F.dBold, fontSize: 13, color: C.navy },
+  dotCore: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.ink },
+  line: { width: 54, height: 4, backgroundColor: C.dark ? C.border : '#dcdde2' },
+  label: { fontFamily: F.dBold, fontSize: 13, color: C.text },
   hint: { fontFamily: F.regular, fontSize: 11, color: '#a4a8b3' },
   err: { fontFamily: F.medium, fontSize: 12, color: C.destructive },
-  select: { height: 48, borderRadius: 12, borderWidth: 1, borderColor: '#d9dce3', backgroundColor: C.white, paddingLeft: 18, paddingRight: 10, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  selectTxt: { flex: 1, fontFamily: F.dBold, fontSize: 15, color: C.navy },
+  select: { height: 48, borderRadius: 12, borderWidth: 1, borderColor: C.dark ? C.border : '#d9dce3', backgroundColor: C.card, paddingLeft: 18, paddingRight: 10, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  selectTxt: { flex: 1, fontFamily: F.dBold, fontSize: 15, color: C.text },
   chev: { width: 26, height: 26, borderRadius: 13, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' },
   backdrop: { flex: 1, backgroundColor: C.overlay },
-  sheet: { backgroundColor: C.white, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 18, gap: 12, ...(Platform.OS === 'web' ? { paddingBottom: 34 } : null) },
+  sheet: { backgroundColor: C.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 18, gap: 12, ...(Platform.OS === 'web' ? { paddingBottom: 34 } : null) },
   grab: { alignSelf: 'center', width: 44, height: 5, borderRadius: 3, backgroundColor: C.border },
-  sheetTitle: { fontFamily: F.dExtra, fontSize: 18, color: C.navy },
+  sheetTitle: { fontFamily: F.dExtra, fontSize: 18, color: C.text },
   opt: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, height: 50, borderRadius: 14, backgroundColor: C.surface },
-  optTxt: { fontFamily: F.dSemibold, fontSize: 15, color: C.navy },
-  tile: { flex: 1, height: 46, borderRadius: 12, backgroundColor: '#f2f3f5', borderWidth: 1, borderColor: '#f2f3f5', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-  tileTxt: { fontFamily: F.dBold, fontSize: 15, color: C.navy },
+  optTxt: { fontFamily: F.dSemibold, fontSize: 15, color: C.text },
+  tile: { flex: 1, height: 46, borderRadius: 12, backgroundColor: C.dark ? C.secondary : '#f2f3f5', borderWidth: 1, borderColor: C.dark ? C.secondary : '#f2f3f5', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
+  tileTxt: { fontFamily: F.dBold, fontSize: 15, color: C.text },
   pill: { height: 54, borderRadius: 27, backgroundColor: C.navy, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 20 },
   pillTxt: { fontFamily: F.dBold, fontSize: 16, color: C.white },
   pillIcon: { width: 22, height: 22, borderRadius: 11, backgroundColor: C.lime, alignItems: 'center', justifyContent: 'center' },
-});
+}));

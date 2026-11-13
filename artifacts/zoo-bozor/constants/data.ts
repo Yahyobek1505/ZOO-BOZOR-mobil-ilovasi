@@ -36,6 +36,10 @@ export type Listing = {
   localOnly?: boolean;
 };
 
+/** Sample catalogue listings have no owner account; they all belong to one demo seller page. */
+export const SAMPLE_SELLER = 'sample';
+export const sellerKey = (l: Pick<Listing, 'ownerId' | 'sample'>) => l.ownerId ?? (l.sample ? SAMPLE_SELLER : undefined);
+
 export type Product = {
   id: string;
   title: string;
@@ -47,39 +51,41 @@ export type Product = {
   description: string;
   rating: number;
   sold: number;
+  /** Who the product is for (Figma "Kim uchun"). */
+  pet: string;
 };
 
 const I = {
-  homeBanner: require('../assets/figma/home-imgRectangle237.png'),
-  promoCats: require('../assets/figma/home-imgRectangle331.png'),
-  catMushuk: require('../assets/figma/home-imgRectangle283.png'),
-  catKuchuk: require('../assets/figma/home-imgRectangle284.png'),
-  catQush: require('../assets/figma/home-imgRectangle285.png'),
-  catEkzotik: require('../assets/figma/home-imgRectangle286.png'),
-  catQoramol: require('../assets/figma/home-imgRectangle287.png'),
-  parrot: require('../assets/figma/home-imgRectangle98.png'),
-  golden: require('../assets/figma/home-imgRectangle295.png'),
-  horse1: require('../assets/figma/home-imgRectangle306.png'),
-  cow1: require('../assets/figma/home-imgRectangle307.png'),
-  golden2: require('../assets/figma/home-imgRectangle328.png'),
-  hawk: require('../assets/figma/home-imgRectangle333.png'),
-  horse2: require('../assets/figma/home-imgRectangle341.png'),
-  cow2: require('../assets/figma/home-imgRectangle342.png'),
-  horse3: require('../assets/figma/home-imgRectangle348.png'),
-  cow3: require('../assets/figma/home-imgRectangle349.png'),
-  catHero: require('../assets/figma/detail-imgChatGptImage420261114231.png'),
+  homeBanner: require('../assets/figma/home-imgRectangle237.jpg'),
+  promoCats: require('../assets/figma/home-imgRectangle331.jpg'),
+  catMushuk: require('../assets/figma/home-imgRectangle283.jpg'),
+  catKuchuk: require('../assets/figma/home-imgRectangle284.jpg'),
+  catQush: require('../assets/figma/home-imgRectangle285.jpg'),
+  catEkzotik: require('../assets/figma/home-imgRectangle286.jpg'),
+  catQoramol: require('../assets/figma/home-imgRectangle287.jpg'),
+  parrot: require('../assets/figma/home-imgRectangle98.jpg'),
+  golden: require('../assets/figma/home-imgRectangle295.jpg'),
+  horse1: require('../assets/figma/home-imgRectangle306.jpg'),
+  cow1: require('../assets/figma/home-imgRectangle307.jpg'),
+  golden2: require('../assets/figma/home-imgRectangle328.jpg'),
+  hawk: require('../assets/figma/home-imgRectangle333.jpg'),
+  horse2: require('../assets/figma/home-imgRectangle341.jpg'),
+  cow2: require('../assets/figma/home-imgRectangle342.jpg'),
+  horse3: require('../assets/figma/home-imgRectangle348.jpg'),
+  cow3: require('../assets/figma/home-imgRectangle349.jpg'),
+  catHero: require('../assets/figma/detail-imgChatGptImage420261114231.jpg'),
   catTabby: require('../assets/figma/detail-imgRectangle307.png'),
   catStone: require('../assets/figma/detail-imgRectangle394.png'),
   catPersian: require('../assets/figma/detail-imgRectangle397.png'),
   catSofa: require('../assets/figma/detail-imgRectangle400.png'),
-  marketBanner: require('../assets/figma/market-imgChatGptImage1620262241392.png'),
-  whiskas1: require('../assets/figma/market-imgImage23.png'),
-  myau: require('../assets/figma/market-imgImage25.png'),
-  foldBall: require('../assets/figma/market-imgRectangle279.png'),
-  whiskas2: require('../assets/figma/market-imgRectangle328.png'),
-  whiskas3: require('../assets/figma/market-imgRectangle333.png'),
-  nulo: require('../assets/figma/market-imgRectangle335.png'),
-  whiskas4: require('../assets/figma/market-imgRectangle337.png'),
+  marketBanner: require('../assets/figma/market-imgChatGptImage1620262241392.jpg'),
+  whiskas1: require('../assets/figma/market-imgImage23.jpg'),
+  myau: require('../assets/figma/market-imgImage25.jpg'),
+  foldBall: require('../assets/figma/market-imgRectangle279.jpg'),
+  whiskas2: require('../assets/figma/market-imgRectangle328.jpg'),
+  whiskas3: require('../assets/figma/market-imgRectangle333.jpg'),
+  nulo: require('../assets/figma/market-imgRectangle335.jpg'),
+  whiskas4: require('../assets/figma/market-imgRectangle337.jpg'),
   s1: require('../assets/figma/home-imgEllipse27.png'),
   s2: require('../assets/figma/home-imgEllipse28.png'),
   s3: require('../assets/figma/home-imgEllipse29.png'),
@@ -149,13 +155,13 @@ export const PRODUCT_CATEGORIES = [
 ];
 
 export const PRODUCTS: Product[] = [
-  { id: 'p1', title: 'Whiskas', category: 'ozuqa', weight: '45 gr', price: 58000, oldPrice: 67000, image: I.whiskas1, description: 'Britan mushugi uchun quruq ozuqa, losos taʼmi bilan. Mushugingiz juda yaxshi koʻradi.', rating: 7.9, sold: 12 },
-  { id: 'p2', title: 'Myau', category: 'nam', weight: '45 gr', price: 58000, oldPrice: 67000, image: I.myau, description: 'Mushuklar uchun nam ozuqa, sous ichida goʻsht boʻlakchalari.', rating: 7.9, sold: 12 },
-  { id: 'p3', title: 'Whiskas Junior', category: 'ozuqa', weight: '350 gr', price: 42500, image: I.whiskas2, description: 'Mushukchalar uchun toʻyimli quruq ozuqa.', rating: 3.5, sold: 1124 },
-  { id: 'p4', title: 'Whiskas Tuna', category: 'ozuqa', weight: '800 gr', price: 87500, oldPrice: 94000, image: I.whiskas3, description: 'Tunets taʼmli quruq ozuqa, katta mushuklar uchun.', rating: 3.5, sold: 1124 },
-  { id: 'p5', title: 'Nulo Kitten', category: 'ozuqa', weight: '1,3 kg', price: 214000, image: I.nulo, description: 'Donsiz, yuqori oqsilli mushukcha ozuqasi.', rating: 4.6, sold: 86 },
-  { id: 'p6', title: 'Whiskas Ocean', category: 'ozuqa', weight: '350 gr', price: 41000, image: I.whiskas4, description: 'Dengiz baliqlari taʼmidagi quruq ozuqa.', rating: 4.1, sold: 214 },
-  { id: 'p7', title: 'Fold oʻyin toʻpi', category: 'oyinchoq', weight: '1 dona', price: 36900, image: I.foldBall, description: 'Mushuk va kuchuklar uchun yumshoq rezina toʻp.', rating: 4.4, sold: 57 },
+  { id: 'p1', title: 'Whiskas', category: 'ozuqa', weight: '45 gr', price: 58000, oldPrice: 67000, image: I.whiskas1, description: 'Britan mushugi uchun quruq ozuqa, losos taʼmi bilan. Mushugingiz juda yaxshi koʻradi.', rating: 7.9, sold: 12, pet: 'Mushuklar' },
+  { id: 'p2', title: 'Myau', category: 'nam', weight: '45 gr', price: 58000, oldPrice: 67000, image: I.myau, description: 'Mushuklar uchun nam ozuqa, sous ichida goʻsht boʻlakchalari.', rating: 7.9, sold: 12, pet: 'Mushuklar' },
+  { id: 'p3', title: 'Whiskas Junior', category: 'ozuqa', weight: '350 gr', price: 42500, image: I.whiskas2, description: 'Mushukchalar uchun toʻyimli quruq ozuqa.', rating: 3.5, sold: 1124, pet: 'Mushukchalar' },
+  { id: 'p4', title: 'Whiskas Tuna', category: 'ozuqa', weight: '800 gr', price: 87500, oldPrice: 94000, image: I.whiskas3, description: 'Tunets taʼmli quruq ozuqa, katta mushuklar uchun.', rating: 3.5, sold: 1124, pet: 'Mushuklar' },
+  { id: 'p5', title: 'Nulo Kitten', category: 'ozuqa', weight: '1,3 kg', price: 214000, image: I.nulo, description: 'Donsiz, yuqori oqsilli mushukcha ozuqasi.', rating: 4.6, sold: 86, pet: 'Mushukchalar' },
+  { id: 'p6', title: 'Whiskas Ocean', category: 'ozuqa', weight: '350 gr', price: 41000, image: I.whiskas4, description: 'Dengiz baliqlari taʼmidagi quruq ozuqa.', rating: 4.1, sold: 214, pet: 'Mushuklar' },
+  { id: 'p7', title: 'Fold oʻyin toʻpi', category: 'oyinchoq', weight: '1 dona', price: 36900, image: I.foldBall, description: 'Mushuk va kuchuklar uchun yumshoq rezina toʻp.', rating: 4.4, sold: 57, pet: 'Mushuk va kuchuklar' },
 ];
 
 export const CITIES: { name: string; geo: GeoPoint }[] = [

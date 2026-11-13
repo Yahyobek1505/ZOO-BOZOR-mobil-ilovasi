@@ -1,0 +1,21 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "zoo-bozor-web",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--prefix", "artifacts/zoo-bozor", "expo", "start", "--web", "--port", "8082"],
+      "cwd": "artifacts/zoo-bozor",
+      "env": { "NODE_OPTIONS": "--max-old-space-size=6144", "CI": "1" },
+      "port": 8082
+    },
+    {
+      "name": "api-server",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["--enable-source-maps", "--env-file-if-exists=.env", "./dist/index.mjs"],
+      "cwd": "artifacts/api-server",
+      "port": 5000,
+      "autoPort": false
+    }
+  ]
+}

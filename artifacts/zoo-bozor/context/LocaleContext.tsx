@@ -40,7 +40,10 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
         updateLanguage(savedLanguage);
       }
       else if (oldGuestState) {
-        const prefs = (JSON.parse(oldGuestState) as { prefs?: { language?: string; welcomed?: boolean } }).prefs;
+        let prefs: { language?: string; welcomed?: boolean } | undefined;
+        try {
+          prefs = (JSON.parse(oldGuestState) as { prefs?: { language?: string; welcomed?: boolean } }).prefs;
+        } catch { /* Buzilgan eski holat til tanlovini toʻsmasin. */ }
         if (prefs?.language === "ru" || prefs?.language === "en") {
           languageRef.current = prefs.language;
           updateLanguage(prefs.language);

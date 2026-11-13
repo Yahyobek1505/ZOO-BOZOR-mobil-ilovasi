@@ -1,16 +1,20 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { Text } from '@/components/LocalizedText';
 import { Alert } from '@/components/AppAlert';
 import { Feather } from '@expo/vector-icons';
-import { C, F } from '@/constants/colors';
+import { F } from '@/constants/colors';
+import { makeStyles, useTheme } from '@/context/ThemeContext';
 import { useApp } from '@/context/AppContext';
 import { APP_LANGUAGES } from '@/constants/translations';
 import { useLocale } from '@/context/LocaleContext';
 import { Button, ScreenHeader, go, useBottomInset } from '@/components/ui';
-import { ToggleRow, fieldStyles } from '@/components/Field';
+import { ToggleRow, useFieldStyles } from '@/components/Field';
 
 export default function Settings() {
+  const { C, theme, setTheme } = useTheme();
+  const st = useSt();
+  const fieldStyles = useFieldStyles();
   const { prefs, setPrefs, resetAll } = useApp();
   const { language, setLanguage, t } = useLocale();
   const bottom = useBottomInset();
@@ -40,7 +44,7 @@ export default function Settings() {
                 <Text style={st.langTxt}>{l.name}</Text>
                 <Text style={st.greeting}>{l.greeting}</Text>
               </View>
-              <Feather name={language === l.id ? 'check-circle' : 'circle'} size={20} color={language === l.id ? C.navy : C.border} />
+              <Feather name={language === l.id ? 'check-circle' : 'circle'} size={20} color={language === l.id ? C.text : C.border} />
             </Pressable>
           ))}
         </View>
@@ -53,6 +57,31 @@ export default function Settings() {
             value={prefs.notifications}
             onChange={(v) => setPrefs({ notifications: v })}
           />
+        </View>
+
+        <View style={fieldStyles.group} testID="theme-group">
+          <Text style={fieldStyles.groupTitle}>Ilova koʻrinishi</Text>
+          {([
+            ['system', 'smartphone', 'Telefon boʻyicha', 'Telefoningiz kunduzgi/tungi sozlamasiga ergashadi'],
+            ['light', 'sun', 'Kunduzgi', 'Doim yorugʻ koʻrinish'],
+            ['dark', 'moon', 'Tungi', 'Doim qorongʻi koʻrinish'],
+          ] as const).map(([id, icon, label, sub]) => (
+            <Pressable
+              key={id}
+              onPress={() => setTheme(id)}
+              style={st.lang}
+              testID={`theme-${id}`}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: theme === id }}
+            >
+              <Feather name={icon} size={20} color={C.text} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={st.langTxt}>{label}</Text>
+                <Text style={st.greeting}>{sub}</Text>
+              </View>
+              <Feather name={theme === id ? 'check-circle' : 'circle'} size={20} color={theme === id ? C.text : C.border} />
+            </Pressable>
+          ))}
         </View>
 
         <View style={fieldStyles.group}>
@@ -79,9 +108,9 @@ export default function Settings() {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((C) => ({
   lang: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 },
-  langTxt: { flex: 1, fontFamily: F.dSemibold, fontSize: 15, color: C.navy },
+  langTxt: { flex: 1, fontFamily: F.dSemibold, fontSize: 15, color: C.text },
   greeting: { fontFamily: F.medium, fontSize: 12, color: C.mutedForeground },
-  p: { fontFamily: F.regular, fontSize: 13, color: C.navy, lineHeight: 20 },
-});
+  p: { fontFamily: F.regular, fontSize: 13, color: C.text, lineHeight: 20 },
+}));

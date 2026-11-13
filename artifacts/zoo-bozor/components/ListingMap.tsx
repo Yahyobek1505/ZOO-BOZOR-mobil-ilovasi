@@ -1,12 +1,15 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Text } from '@/components/LocalizedText';
 import { WebView } from 'react-native-webview';
-import { C, F } from '@/constants/colors';
+import { F } from '@/constants/colors';
+import { makeStyles, useTheme } from '@/context/ThemeContext';
 import { ListingMapProps, mapDocument } from './map-document';
 
-export default function ListingMap({ pins, me, onSelect }: ListingMapProps) {
-  const html = useMemo(() => mapDocument(pins, me), [pins, me]);
+export default function ListingMap({ pins, me, onSelect, view }: ListingMapProps) {
+  const { C } = useTheme();
+  const st = useSt();
+  const html = useMemo(() => mapDocument(pins, me, view), [pins, me, view]);
   const [attempt, setAttempt] = useState(0);
   return (
     <WebView
@@ -34,8 +37,8 @@ export default function ListingMap({ pins, me, onSelect }: ListingMapProps) {
   );
 }
 
-const st = StyleSheet.create({
+const useSt = makeStyles((C) => ({
   error: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12, backgroundColor: C.secondary },
-  text: { fontFamily: F.regular, color: C.navy, textAlign: 'center' },
-  retry: { fontFamily: F.bold, color: C.navy, padding: 12 },
-});
+  text: { fontFamily: F.regular, color: C.text, textAlign: 'center' },
+  retry: { fontFamily: F.bold, color: C.text, padding: 12 },
+}));
