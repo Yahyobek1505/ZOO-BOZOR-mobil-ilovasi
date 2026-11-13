@@ -86,6 +86,7 @@ const I = {
   whiskas3: require('../assets/figma/market-imgRectangle333.jpg'),
   nulo: require('../assets/figma/market-imgRectangle335.jpg'),
   whiskas4: require('../assets/figma/market-imgRectangle337.jpg'),
+  whiskasPouch: require('../assets/figma/market-whiskas-pouch.png'),
   s1: require('../assets/figma/home-imgEllipse27.png'),
   s2: require('../assets/figma/home-imgEllipse28.png'),
   s3: require('../assets/figma/home-imgEllipse29.png'),
@@ -162,6 +163,8 @@ export const PRODUCTS: Product[] = [
   { id: 'p5', title: 'Nulo Kitten', category: 'ozuqa', weight: '1,3 kg', price: 214000, image: I.nulo, description: 'Donsiz, yuqori oqsilli mushukcha ozuqasi.', rating: 4.6, sold: 86, pet: 'Mushukchalar' },
   { id: 'p6', title: 'Whiskas Ocean', category: 'ozuqa', weight: '350 gr', price: 41000, image: I.whiskas4, description: 'Dengiz baliqlari taʼmidagi quruq ozuqa.', rating: 4.1, sold: 214, pet: 'Mushuklar' },
   { id: 'p7', title: 'Fold oʻyin toʻpi', category: 'oyinchoq', weight: '1 dona', price: 36900, image: I.foldBall, description: 'Mushuk va kuchuklar uchun yumshoq rezina toʻp.', rating: 4.4, sold: 57, pet: 'Mushuk va kuchuklar' },
+  // Figma "8-Mahsulot maʼlumoti": title, price, type, weight and pet from the mock-up.
+  { id: 'p8', title: 'Mushuklar uchun quruq', category: 'ozuqa', weight: '1 kg', price: 4700, image: I.whiskasPouch, description: 'Quruq ozuqa. Olib ketish: Toshkent, Yunusobod.', rating: 4.5, sold: 150, pet: 'Mushuklar' },
 ];
 
 export const CITIES: { name: string; geo: GeoPoint }[] = [

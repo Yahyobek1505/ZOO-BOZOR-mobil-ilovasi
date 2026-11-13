@@ -332,7 +332,8 @@ export function ProductCard({ item, style }: { item: Product; style?: StyleProp<
       <View style={{ padding: 8, gap: 2 }}>
         <View style={[s.row, { justifyContent: 'space-between' }]}>
           <Text style={s.cardTitle} numberOfLines={1}>{item.title}</Text>
-          <Text style={s.meta}>{item.weight}</Text>
+          {/* A long title is cut with "…"; the weight never wraps (keeps every card the same height). */}
+          <Text style={[s.meta, { flexShrink: 0, marginLeft: 6 }]} numberOfLines={1}>{item.weight}</Text>
         </View>
         <View style={[s.row, { justifyContent: 'space-between' }]}>
           <Text style={s.cardPrice}>

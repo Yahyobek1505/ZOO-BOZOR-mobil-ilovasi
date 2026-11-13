@@ -17,7 +17,7 @@ export function authErrorText(error: unknown): string {
     'zoo/framed': 'Ilova boshqa sahifa ichida ochilgan, bu yerda Google oynasi ishlamaydi. Ilovani brauzerning alohida oynasida oching.',
     'auth/popup-closed-by-user': 'Google orqali kirish tugallanmasdan oyna yopildi.',
     'auth/cancelled-popup-request': 'Oldingi kirish oynasi bekor qilindi. Bitta oynada davom eting.',
-    'auth/invalid-credential': 'Email yoki parol notoʻgʻri. Oldingi hisobingiz boʻlsa, Firebase’da shu email bilan bir marta roʻyxatdan oʻting va uni tasdiqlang. Eski parol avtomatik koʻchirilmaydi.',
+    'auth/invalid-credential': 'Email yoki parol notoʻgʻri.',
     'auth/invalid-email': 'Elektron pochta manzilini toʻgʻri kiriting.',
     'auth/email-already-in-use': 'Bu email bilan hisob mavjud. Kirish yoki parolni tiklashdan foydalaning.',
     'auth/weak-password': 'Kuchliroq parol tanlang, kamida 8 ta belgi kiriting.',
