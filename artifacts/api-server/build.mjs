@@ -10,12 +10,18 @@ globalThis.require = createRequire(import.meta.url);
 
 const artifactDir = path.dirname(fileURLToPath(import.meta.url));
 
+// `node build.mjs --netlify` bundles the Netlify Function (src/netlify.ts) into one file in
+// dist-netlify/. Production logging only there: no pino-pretty worker threads in a function.
+const forNetlify = process.argv.includes("--netlify");
+
 async function buildAll() {
-  const distDir = path.resolve(artifactDir, "dist");
+  const distDir = path.resolve(artifactDir, forNetlify ? "dist-netlify" : "dist");
   await rm(distDir, { recursive: true, force: true });
 
   await esbuild({
-    entryPoints: [path.resolve(artifactDir, "src/index.ts")],
+    entryPoints: [path.resolve(artifactDir, forNetlify ? "src/netlify.ts" : "src/index.ts")],
+    entryNames: forNetlify ? "api" : "[name]",
+    ...(forNetlify ? { define: { "process.env.NODE_ENV": '"production"' } } : {}),
     platform: "node",
     bundle: true,
     format: "esm",
@@ -101,8 +107,8 @@ async function buildAll() {
       "puppeteer-core",
       "electron",
     ],
-    sourcemap: "linked",
-    plugins: [
+    sourcemap: forNetlify ? false : "linked",
+    plugins: forNetlify ? [] : [
       // pino relies on workers to handle logging, instead of externalizing it we use a plugin to handle it
       esbuildPluginPino({ transports: ["pino-pretty"] })
     ],

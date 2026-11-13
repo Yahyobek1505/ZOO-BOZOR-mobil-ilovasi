@@ -61,3 +61,8 @@ __pycache__/
 # Local env
 .env
 .env*.local
+
+# Netlify function bundle and local image uploads (API dev)
+artifacts/api-server/dist-netlify
+artifacts/api-server/.data
+.netlify

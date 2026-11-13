@@ -1,0 +1,24 @@
+# Netlify: the Expo web app as a static site + the Express API as one Netlify Function.
+# Secrets (DATABASE_URL, EXPO_PUBLIC_FIREBASE_*, SESSION_SECRET) are set in the Netlify UI,
+# never in this file.
+[build]
+  command = "pnpm run build:netlify"
+  publish = "artifacts/zoo-bozor/dist"
+  functions = "artifacts/api-server/dist-netlify"
+
+[build.environment]
+  NODE_VERSION = "24"
+  PNPM_VERSION = "12.11.2"
+
+# API requests go to the function; the app and the API share one address.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+# Single-page app: every other path opens index.html and expo-router picks the screen.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

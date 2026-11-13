@@ -13,7 +13,7 @@ export async function persistListingImages(images: string[]): Promise<string[]> 
       continue;
     }
     // Browser blobs/data URLs and native gallery URIs are read locally, then sent
-    // directly to App Storage. File bytes never pass through the API or database.
+    // to the API, which keeps them in file storage (never in the database).
     let body: Blob;
     let nativeFile: import('expo-file-system').File | undefined;
     if (Platform.OS === 'web') {
@@ -33,7 +33,7 @@ export async function persistListingImages(images: string[]): Promise<string[]> 
     }
     const { uploadURL, objectPath } = await requestListingUpload({ contentType, size: body.size });
     const uploadFetch = nativeFile ? (await import('expo/fetch')).fetch : fetch;
-    const result = await uploadFetch(uploadURL, { method: 'PUT', headers: { 'Content-Type': contentType }, body });
+    const result = await uploadFetch(assetUrl(uploadURL), { method: 'PUT', headers: { 'Content-Type': contentType }, body });
     if (!result.ok) throw new Error('Rasmni serverga yuklab boʻlmadi. Qoralamani saqlab, qayta urinib koʻring.');
     saved.push(objectPath);
   }

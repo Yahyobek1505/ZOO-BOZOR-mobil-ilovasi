@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { Router } from "express";
+import express, { Router } from "express";
 import { db, listingsTable, listingImagesTable, and, desc, eq, sql, type StoredListing } from "@workspace/db";
 import { CreateListingBody, RequestListingUploadBody } from "@workspace/api-zod";
-import { imageFile, imageUploadUrl } from "../lib/listingStorage";
+import { UPLOAD_MAX_BYTES, imageInfo, readImage, saveImage } from "../lib/listingStorage";
 import { getRequestIdentity, requireFirebaseAuth } from "../lib/firebase-auth";
 
 const router = Router();
@@ -27,12 +27,26 @@ router.post("/storage/uploads/request-url", requireFirebaseAuth, async (req, res
   if (!ownerId) { res.status(401).json({ error: "Avval hisobingizga kiring." }); return; }
   const parsed = RequestListingUploadBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Rasm turi yoki hajmi notoʻgʻri (eng koʻpi 10 MB)." }); return; }
+  if (parsed.data.size > UPLOAD_MAX_BYTES) { res.status(400).json({ error: "Rasm juda katta (eng koʻpi 4 MB). Kichikroq rasm tanlang." }); return; }
   const id = randomUUID();
-  const uploadURL = await imageUploadUrl(id);
   await db.insert(listingImagesTable).values({
     id, ownerId, contentType: parsed.data.contentType, size: String(parsed.data.size),
   });
-  res.json({ uploadURL, objectPath: `/api/storage/images/${id}` });
+  // The random ID is the upload permission: only the requester knows it, it works once, briefly.
+  res.json({ uploadURL: `/api/storage/uploads/${id}`, objectPath: `/api/storage/images/${id}` });
+});
+
+router.put("/storage/uploads/:id", express.raw({ type: () => true, limit: UPLOAD_MAX_BYTES }), async (req, res) => {
+  const id = req.params.id;
+  if (!/^[a-f0-9-]{36}$/.test(id)) { res.sendStatus(404); return; }
+  const [image] = await db.select().from(listingImagesTable).where(eq(listingImagesTable.id, id));
+  if (!image || Date.now() - image.createdAt.getTime() > 15 * 60_000 || await imageInfo(id)) { res.sendStatus(403); return; }
+  const body = req.body as Buffer;
+  if (!Buffer.isBuffer(body) || body.length !== Number(image.size) || req.get("content-type") !== image.contentType) {
+    res.status(400).json({ error: "Yuklangan rasm hajmi yoki turi mos emas." }); return;
+  }
+  await saveImage(id, body, image.contentType);
+  res.sendStatus(200);
 });
 
 router.get("/storage/images/:id", async (req, res) => {
@@ -43,19 +57,14 @@ router.get("/storage/images/:id", async (req, res) => {
   const [listing] = await db.select({ id: listingsTable.id }).from(listingsTable)
     .where(sql`${listingsTable.data}->'images' @> ${JSON.stringify([path])}::jsonb`).limit(1);
   if (!listing) { res.sendStatus(404); return; }
-  const file = imageFile(id);
-  const [exists] = await file.exists();
-  if (!exists) { res.sendStatus(404); return; }
-  const [metadata] = await file.getMetadata();
+  const image = await readImage(id);
+  if (!image) { res.sendStatus(404); return; }
   res.set({
-    "Content-Type": metadata.contentType || "application/octet-stream",
+    "Content-Type": image.contentType || "application/octet-stream",
     "Cache-Control": "public, max-age=300",
     "X-Content-Type-Options": "nosniff",
   });
-  file.createReadStream().on("error", (err) => {
-    req.log.error({ err }, "Image stream failed");
-    if (!res.headersSent) res.sendStatus(500); else res.destroy();
-  }).pipe(res);
+  res.send(image.data);
 });
 
 router.post("/listings", requireFirebaseAuth, async (req, res) => { await save(req, res, false); });
@@ -78,11 +87,9 @@ async function save(req: import("express").Request, res: import("express").Respo
     const [image] = await db.select().from(listingImagesTable)
       .where(and(eq(listingImagesTable.id, id), eq(listingImagesTable.ownerId, ownerId)));
     if (!image) { res.status(400).json({ error: "Faqat oʻzingiz yuklagan rasmlarni qoʻshing." }); return; }
-    const file = imageFile(id);
-    const [exists] = await file.exists();
-    if (!exists) { res.status(400).json({ error: "Rasm hali yuklanmagan. Qayta urinib koʻring." }); return; }
-    const [metadata] = await file.getMetadata();
-    if (Number(metadata.size) !== Number(image.size) || metadata.contentType !== image.contentType) {
+    const stored = await imageInfo(id);
+    if (!stored) { res.status(400).json({ error: "Rasm hali yuklanmagan. Qayta urinib koʻring." }); return; }
+    if (stored.size !== Number(image.size) || stored.contentType !== image.contentType) {
       res.status(400).json({ error: "Yuklangan rasm hajmi yoki turi mos emas." }); return;
     }
   }

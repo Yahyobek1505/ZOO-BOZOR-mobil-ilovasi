@@ -1,48 +1,56 @@
-import { Storage } from "@google-cloud/storage";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { getStore } from "@netlify/blobs";
 
-// Replit sidecar authentication; no service-account credentials are stored here.
-const endpoint = "http://127.0.0.1:1106";
-const storage = new Storage({
-  credentials: {
-    audience: "replit",
-    subject_token_type: "access_token",
-    token_url: `${endpoint}/token`,
-    type: "external_account",
-    credential_source: {
-      url: `${endpoint}/credential`,
-      format: { type: "json", subject_token_field_name: "access_token" },
-    },
-    universe_domain: "googleapis.com",
-  },
-  projectId: "",
-});
+// Netlify sync functions accept ~6 MB request bodies, sent base64-encoded, so raw files above
+// ~4.5 MB never reach the API. Keep a margin.
+export const UPLOAD_MAX_BYTES = 4 * 1024 * 1024;
 
-function location(id: string) {
+export type ImageInfo = { size: number; contentType: string };
+
+// On Netlify images live in Netlify Blobs; elsewhere (local `pnpm dev`) in a folder next to the
+// API, so uploads can be tried without a cloud account.
+let netlify = false;
+export function useNetlifyBlobs() { netlify = true; }
+
+const localDir = () => path.resolve(process.cwd(), ".data", "listing-images");
+
+function key(id: string) {
   if (!/^[a-f0-9-]{36}$/.test(id)) throw new Error("Invalid image ID");
-  const dir = process.env.PRIVATE_OBJECT_DIR;
-  if (!dir) throw new Error("App Storage is not configured");
-  const [bucketName, ...parts] = dir.replace(/^\/|\/$/g, "").split("/");
-  return { bucketName, objectName: `${parts.join("/")}/listing-images/${id}` };
+  return id;
 }
 
-export function imageFile(id: string) {
-  const { bucketName, objectName } = location(id);
-  return storage.bucket(bucketName).file(objectName);
+export async function saveImage(id: string, data: Buffer, contentType: string) {
+  const info: ImageInfo = { size: data.length, contentType };
+  if (netlify) {
+    const bytes = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+    await getStore("listing-images").set(key(id), bytes, { metadata: info });
+    return;
+  }
+  await mkdir(localDir(), { recursive: true });
+  await writeFile(path.join(localDir(), key(id)), data);
+  await writeFile(path.join(localDir(), `${key(id)}.json`), JSON.stringify(info));
 }
 
-export async function imageUploadUrl(id: string) {
-  const { bucketName, objectName } = location(id);
-  const response = await fetch(`${endpoint}/object-storage/signed-object-url`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      bucket_name: bucketName, object_name: objectName, method: "PUT",
-      expires_at: new Date(Date.now() + 900_000).toISOString(),
-    }),
-    signal: AbortSignal.timeout(30_000),
-  });
-  if (!response.ok) throw new Error("Image upload URL could not be created");
-  const result = await response.json() as { signed_url?: string };
-  if (!result.signed_url) throw new Error("Image upload URL is missing");
-  return result.signed_url;
+export async function imageInfo(id: string): Promise<ImageInfo | null> {
+  if (netlify) {
+    const found = await getStore("listing-images").getMetadata(key(id));
+    return found ? (found.metadata as ImageInfo) : null;
+  }
+  try {
+    return JSON.parse(await readFile(path.join(localDir(), `${key(id)}.json`), "utf8")) as ImageInfo;
+  } catch {
+    return null;
+  }
+}
+
+export async function readImage(id: string): Promise<{ data: Buffer; contentType: string } | null> {
+  if (netlify) {
+    const found = await getStore("listing-images").getWithMetadata(key(id), { type: "arrayBuffer" });
+    if (!found) return null;
+    return { data: Buffer.from(found.data), contentType: (found.metadata as ImageInfo).contentType };
+  }
+  const info = await imageInfo(id);
+  if (!info) return null;
+  return { data: await readFile(path.join(localDir(), key(id))), contentType: info.contentType };
 }
