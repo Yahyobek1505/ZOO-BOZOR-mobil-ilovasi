@@ -11,7 +11,6 @@
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
-    "@clerk/express": "^2.1.88",
     "@netlify/blobs": "^11.1.9",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",

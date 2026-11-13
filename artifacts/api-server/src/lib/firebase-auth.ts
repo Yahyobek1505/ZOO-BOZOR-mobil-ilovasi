@@ -1,7 +1,6 @@
 import type { Request, RequestHandler } from 'express';
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
 import { db, authIdentitiesTable, eq } from '@workspace/db';
-import { clerkClient } from '@clerk/express';
 
 const googleKeys = createRemoteJWKSet(new URL('https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'));
 export class AuthError extends Error {
@@ -34,19 +33,9 @@ async function marketplaceAccount(claims: FirebaseClaims): Promise<string> {
   const [known] = await db.select().from(authIdentitiesTable).where(eq(authIdentitiesTable.firebaseUid, claims.sub)).limit(1);
   if (known) return known.accountId;
 
-  // Read-only legacy lookup, never copy a password or trust a client-supplied ID.
-  // Keep these managed keys until old verified accounts have been linked.
-  // LEGACY_CLERK_LOOKUP=off is only for a fresh database that never had Clerk users;
-  // by default a missing key still blocks sign-up so legacy accounts cannot be split.
-  let matches: { id: string }[] = [];
-  if (process.env.LEGACY_CLERK_LOOKUP !== 'off') {
-    if (!process.env.CLERK_SECRET_KEY) throw new AuthError(503, 'Oldingi hisoblarni bogʻlash sozlamasi topilmadi. Maʼlumotlaringiz oʻchirilmagan.');
-    const legacy = await clerkClient.users.getUserList({ emailAddress: [claims.email], limit: 2 });
-    matches = legacy.data.filter((user) => user.emailAddresses.some((email) =>
-      email.emailAddress.toLowerCase() === claims.email.toLowerCase() && email.verification?.status === 'verified'));
-  }
-  if (matches.length > 1) throw new AuthError(409, 'Bu email bir nechta oldingi hisobga bogʻlangan. Hisobni alohida tekshirish kerak.');
-  const accountId = matches[0]?.id ?? `firebase_${claims.sub}`;
+  // The database has no accounts from the old Clerk sign-in (checked 2026-11-14), so a new
+  // Firebase user simply gets a new account.
+  const accountId = `firebase_${claims.sub}`;
   try {
     await db.insert(authIdentitiesTable).values({ firebaseUid: claims.sub, accountId }).onConflictDoNothing();
     const [saved] = await db.select().from(authIdentitiesTable).where(eq(authIdentitiesTable.firebaseUid, claims.sub)).limit(1);

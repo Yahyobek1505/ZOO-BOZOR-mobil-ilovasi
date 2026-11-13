@@ -46,8 +46,9 @@ export default function Welcome() {
   const finish = () => {
     app?.setPrefs({ welcomed: true });
     completeOnboarding();
-    if (router.canGoBack()) router.back();
-    else router.replace('/' as never);
+    // First launch ends on sign-in (once, after the language step), as in the Figma flow;
+    // "Mehmon sifatida davom etish" there still opens the app without an account.
+    router.replace('/login?next=%2F' as never);
   };
 
   // Step 3 is the Language Selection Screen ("5-Til tanlash")

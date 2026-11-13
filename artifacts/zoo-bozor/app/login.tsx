@@ -99,7 +99,6 @@ export default function Login() {
             <Text style={st.switchBold}>{auth.mode === 'signin' ? 'Roʻyxatdan oʻting' : 'Kiring'}</Text>
           </Text>
         </Pressable>
-        {auth.mode === 'signin' ? <Text style={st.migration}>Oldingi hisobingiz boʻlsa, Firebase’da oʻsha email bilan bir marta roʻyxatdan oʻting va uni tasdiqlang. Eski parolingiz avtomatik koʻchirilmaydi.</Text> : null}
       </> : null}
       <View style={{ flex: 1 }} />
       <Pressable onPress={() => (router.canGoBack() ? router.back() : goHome())} style={st.guest} accessibilityRole="button" testID="login-guest">
@@ -132,7 +131,6 @@ const useSt = makeStyles((C) => ({
   gMark: { fontFamily: F.dExtra, fontSize: 28, color: '#4285f4' },
   switchTxt: { fontFamily: F.medium, fontSize: 14, color: C.mutedForeground },
   switchBold: { fontFamily: F.dBold, color: C.text },
-  migration: { fontFamily: F.regular, fontSize: 11, lineHeight: 17, color: C.mutedForeground, textAlign: 'center' },
   guest: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 10 },
   guestTxt: { fontFamily: F.dBold, fontSize: 14, color: C.text },
 }));
