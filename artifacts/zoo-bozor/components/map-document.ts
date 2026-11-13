@@ -28,7 +28,8 @@ export function mapDocument(pins: MapPin[], me: GeoPoint | null, view?: MapView)
 html,body,#map{height:100%;margin:0;background:${C.secondary};font-family:Arial,sans-serif}
 .animal{display:flex;flex-direction:column;align-items:center;width:110px;padding:0;border:0;background:none;cursor:pointer;transition:transform .15s;transform-origin:50% 100%}
 .animal .ring{display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:60px;height:60px;padding:2px;border:3px solid ${C.lime};border-radius:50%;background:${C.white};box-shadow:0 3px 10px rgba(8,13,32,.25);overflow:hidden}
-.animal img{display:block;width:100%;height:100%;object-fit:cover;border-radius:50%;pointer-events:none}
+/* Leaflet sets marker images to width:auto with a more specific rule; keep the photo filling the ring. */
+.leaflet-container .animal .ring img{display:block;width:100%;height:100%;object-fit:cover;border-radius:50%;pointer-events:none}
 .animal .price{position:relative;z-index:1;margin-top:-9px;padding:3px 8px;border-radius:10px;background:${C.white};color:${C.navy};font-weight:800;font-size:10px;white-space:nowrap;box-shadow:0 1px 5px rgba(8,13,32,.25)}
 .animal .tip{width:0;height:0;margin-top:1px;border-left:8px solid transparent;border-right:8px solid transparent;border-top:12px solid ${C.lime}}
 .animal.selected{transform:scale(1.12)}
